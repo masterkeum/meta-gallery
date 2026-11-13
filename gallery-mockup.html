@@ -262,11 +262,20 @@ ART.forEach(a=>{a.title=a.repo;a.artist=GH_AUTHOR;a.w=1.6;a.h=1;a.frame='black';
 const N=ART.length;
 /* ---------- building: one helical ramp climbing the inside of a widening drum ----------
    A point on the ramp is (phi, r): phi = unwrapped angle (radians, 0 at the entrance), height = K*phi. */
-// TURNS was 2.25 for 10 works and 2 for 8; with 6 works 1.35 turns keeps the spacing between frames (~1.40 rad) at the original density
-const RISE=3.6,TURNS=1.35,PHI_MAX=TURNS*TAU,K=RISE/TAU,OPEN=.6,ENTRY=.3,SLAB=.35,PARA=1.05,PT=.2;
-const Rout=h=>7.6+.12*h, Rin=h=>4.6+.04*h, R_IN0=4.6, TOP_H=K*PHI_MAX, HTOP=TOP_H+RISE;
-const EYE=1.62,PR=.42;
-const ART_PHI=ART.map((_,i)=>.95+i*(PHI_MAX-.55-.95)/(N-1));
+// CEO 2026-11-13: the hall felt cramped, so the whole drum grew 20% (Rout 7.6 -> 9.12, Rin/lobby 4.6 -> 5.52,
+// RISE 3.6 -> 4.32, walkway 3.0 -> 3.6 m wide). Two things were kept constant on purpose:
+//  - ramp slope: RISE grew with the radius, so K/r (7.5%) is unchanged; height alone would have made a narrow tube;
+//  - walking distance between frames: a wider drum means a longer arc per radian, so TURNS dropped 1.35 -> 1.15
+//    (6 cards, ~1.16 rad apart = ~10.7 m, the same walk as before). TURNS must stay above 1 (paraVoid2 needs TAU..PHI_MAX).
+// PARA dropped to .75 because the 2/3 cats are ~1.0 m tall: a 1.05 m parapet hid the atrium from them in 1st person.
+const RISE=4.32,TURNS=1.15,PHI_MAX=TURNS*TAU,K=RISE/TAU,OPEN=.6,ENTRY=.3,SLAB=.35,PARA=.75,PT=.2;
+const Rout=h=>9.12+.144*h, Rin=h=>5.52+.048*h, R_IN0=5.52, TOP_H=K*PHI_MAX, HTOP=TOP_H+RISE;
+const EYE=1.62,PR=.32;
+// CEO 2026-11-13: the cats are shown at 2/3 so the hall feels wider. The models are still built at 1.0 and the
+// group is scaled by CS, so everything measured against a cat's body hangs off CS: 1st person eye height,
+// 3rd person camera framing (CAM_K/CAM_PIV), body collision radius (CR), jump height (JUMP_V) and stride (STEP).
+const CS=2/3,EYE_FP=EYE*CS,CAM_K=.8,CAM_PIV=1.05;
+const ART_PHI=ART.map((_,i)=>.9+i*(PHI_MAX-.55-.9)/(N-1));   // .9 keeps card 01 under the turn above, so its downlight survives
 const VIS=[ // coat: calico / grey tabby / tuxedo / ginger tabby
  {name:'민지',color:0xd9644a,css:'#d9644a',fur:0xf3e3c6,earTip:0x3a3433,patch:[{c:0xe3974d,x:-.16,y:.17,z:.235,r:.13},{c:0x3a3433,x:.27,y:.1,z:.12,r:.1}],tip:0xe3974d,at:1},
  {name:'Jae',color:0x4a7be0,css:'#4a7be0',fur:0x9aa1aa,mark:0x6c737c,muzzle:0xf3f1ee,at:2},
@@ -287,7 +296,7 @@ const maxAniso=Math.min(8,renderer.capabilities.getMaxAnisotropy());
 const scene=new THREE.Scene();
 const BG=0xdedbd4; scene.background=new THREE.Color(BG); scene.fog=new THREE.Fog(BG,26,70);
 const camera=new THREE.PerspectiveCamera(62,1,.05,120); camera.rotation.order='YXZ';
-const camD=()=>camera.aspect<1?4.3:3.2, sho=()=>camera.aspect<1?.15:.35;
+const camD=()=>(camera.aspect<1?4.3:3.2)*CAM_K, sho=()=>(camera.aspect<1?.15:.35)*CAM_K;
 scene.add(new THREE.HemisphereLight(0xffffff,0x9d968b,.74));
 scene.add(new THREE.AmbientLight(0xffffff,.24));
 const sun=new THREE.DirectionalLight(0xfff6ea,.32); sun.position.set(2,20,3); scene.add(sun);
@@ -406,9 +415,9 @@ strip(0,PHI_MAX,p=>V3(p,Rout(hA(p))-.015,hA(p)+.001),p=>V3(p,Rout(hA(p))-.015,hA
 const hO=hA(OPEN);
 const capA=quad(V3(OPEN,Rin(hO),0),V3(OPEN,Rin(hO)+PT,0),V3(OPEN,Rin(hO)+PT,hO+PARA),V3(OPEN,Rin(hO),hO+PARA),whiteMat);
 const startWall=quad(V3(0,R_IN0-.02,0),V3(0,Rout(0),0),V3(0,Rout(0),hA(TAU)-SLAB),V3(0,R_IN0-.02,hA(TAU)-SLAB),whiteMat);
-const topWall=quad(V3(PHI_MAX,Rin(TOP_H),TOP_H-SLAB),V3(PHI_MAX,Rout(TOP_H),TOP_H-SLAB),V3(PHI_MAX,Rout(TOP_H),TOP_H+3.2),V3(PHI_MAX,Rin(TOP_H),TOP_H+3.2),whiteMat);
+const topWall=quad(V3(PHI_MAX,Rin(TOP_H),TOP_H-SLAB),V3(PHI_MAX,Rout(TOP_H),TOP_H-SLAB),V3(PHI_MAX,Rout(TOP_H),TOP_H+3.9),V3(PHI_MAX,Rin(TOP_H),TOP_H+3.9),whiteMat);
 const outerWall=new THREE.Mesh(new THREE.CylinderGeometry(Rout(HTOP),Rout(0),HTOP,128,1,true),wallMat);outerWall.position.y=HTOP/2;scene.add(outerWall);
-const lobbyTex=concreteTex('#aaa49a');lobbyTex.repeat.set(2.4,2.4);
+const lobbyTex=concreteTex('#aaa49a');lobbyTex.repeat.set(2.9,2.9);
 const lobby=new THREE.Mesh(new THREE.CircleGeometry(R_IN0+.05,96),new THREE.MeshLambertMaterial({map:lobbyTex}));lobby.rotation.x=-Math.PI/2;scene.add(lobby);
 // skylight
 const skyTex=(()=>{const s=1024,cv=document.createElement('canvas');cv.width=cv.height=s;const c=cv.getContext('2d'),m=s/2;
@@ -444,8 +453,13 @@ ART.forEach((a,i)=>{
 });
 // exhibition title on the lobby wall, opposite the ramp entrance
 const titleCv=document.createElement('canvas');titleCv.width=1024;titleCv.height=512;const titleTex=new THREE.CanvasTexture(titleCv);titleTex.anisotropy=maxAniso;
-const titleMesh=new THREE.Mesh(new THREE.PlaneGeometry(3,1.5),new THREE.MeshBasicMaterial({map:titleTex,transparent:true}));
-{const R=Rin(hA(Math.PI)),r=R-(1.5*1.5/(2*R)+.04);titleMesh.position.set(-r,1.75,0);titleMesh.rotation.y=Math.PI/2;scene.add(titleMesh)}
+// The title hangs on the lobby wall the player faces when the gallery opens. At phi = PI the wall is only
+// hA(PI)+PARA = 3.4 m tall, so the lettering had to sit low - right behind the cat's head. The wall gets taller
+// as the ramp climbs, so the title moved to 1.25*PI where there is room to lift it clear above the cat.
+const TW=2.8,TH=1.4,TPHI=1.25*Math.PI,TY=2.55;
+const titleMesh=new THREE.Mesh(new THREE.PlaneGeometry(TW,TH),new THREE.MeshBasicMaterial({map:titleTex,transparent:true}));
+{const R=Rin(hA(TPHI)),r=R-(TW/2*TW/2/(2*R)+.04),tp=polar(TPHI,r);
+ titleMesh.position.set(tp.x,TY,tp.z);titleMesh.rotation.y=Math.atan2(-Math.cos(TPHI),-Math.sin(TPHI));scene.add(titleMesh)}
 
 /* ---------- characters (visitors + me) ---------- */
 function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
@@ -504,12 +518,16 @@ function makeCharacter(v){
   const m=tip&&i>=11?tip:(mark&&i%4===2?mark:fur);add(SPH(+(.072-i*.0022).toFixed(4),12,10),m,0,.03,0,p);parent=p;tail.push(p)}
  const sh=new THREE.Mesh(new THREE.CircleGeometry(.32,24),new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.16,depthWrite:false}));sh.rotation.x=-Math.PI/2;sh.position.y=.012;g.add(sh);
  const cv=document.createElement('canvas');cv.width=512;cv.height=200;const tex=new THREE.CanvasTexture(cv);
- const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthWrite:false}));sprite.scale.set(2,.78,1);sprite.position.y=2.06;inner.add(sprite);
+ const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthWrite:false}));sprite.scale.set(2/CS,.78/CS,1);sprite.position.y=2.3;inner.add(sprite);  // counter-scaled: the plate keeps its real size
+ g.scale.setScalar(CS);
  scene.add(g);
  return {v,g,inner,legs,arms,tail,head,eyes,ears,cv,tex,walkT:0,tailT:Math.random()*6,blink:1+Math.random()*3,twitch:2+Math.random()*4,twT:0,twEar:0,jy:0,vy:0,land:0,sayUntil:0};
 }
 // light, bouncy trot: quick short steps, a little hop and squash on every step, body leaning forward
-const WALK=4.2,STEP=12.5,GRAV=18,JUMP_V=5;
+// CEO 2026-11-13: the controls felt too fast, so WALK dropped 4.2 -> 2.8 (Shift still runs at the old 4.2).
+// STEP went up because the step cycle is distance-locked (2*PI*WALK/STEP metres per cycle): shorter legs, shorter steps.
+// JUMP_V is scaled by sqrt(CS) so the smaller cat jumps the same height relative to its body.
+const WALK=2.8,RUN=4.2,STEP=13.4,GRAV=18,JUMP_V=4.1;
 function stepJump(o,dt){if(o.jy>0||o.vy>0){o.vy-=GRAV*dt;o.jy+=o.vy*dt;if(o.jy<=0){o.jy=0;o.vy=0;o.land=.2}}return o.jy>0}
 function animateWalk(o,dt,moving,air){const walk=moving&&!air;if(walk)o.walkT+=dt;const s=walk?Math.sin(o.walkT*STEP)*.5:0,k=Math.min(1,dt*16);
  o.tailT+=dt*(moving||air?1.8:1);o.tail.forEach((p,i)=>{p.rotation.z=Math.sin(o.tailT*2.4-i*.32)*(moving||air?.18:.1)});
@@ -532,14 +550,17 @@ const avatars=VIS.map((v,k)=>{const o=makeCharacter(v),A=arts[v.at];
 const me=makeCharacter({name:'나',color:0x2d45c4,css:'#6f86ff',fur:0xf8f5ef,muzzle:0xffffff,tip:0xd8d2c8});
 function wrap(c,text,max,lines){const out=[];let cur='';for(const ch of text){if(c.measureText(cur+ch).width>max){out.push(cur);cur=ch;if(out.length===lines)break}else cur+=ch}
  if(out.length<lines&&cur)out.push(cur);else if(out.length===lines&&cur){out[lines-1]=out[lines-1].slice(0,-1)+'…'}return out}
+// my own cat carries no idle name tag: the plate floats near the camera and covered the wall title in the opening
+// view (and I know who I am). It still appears, with the name, while I am saying something.
 function drawName(a,msg){const c=a.cv.getContext('2d');c.clearRect(0,0,512,200);
+ if(a===me&&!msg){a.tex.needsUpdate=true;return}
  c.font='600 30px "IBM Plex Sans KR", "Apple SD Gothic Neo", sans-serif';const tw=c.measureText(a.v.name).width,pw=tw+56,px=256-pw/2,py=150;
  rr(c,px,py,pw,44,22);c.fillStyle='rgba(22,23,28,.8)';c.fill();c.fillStyle=a.v.css;c.beginPath();c.arc(px+23,py+22,7,0,TAU);c.fill();c.fillStyle='#fff';c.fillText(a.v.name,px+38,py+32);
  if(msg){c.font='500 27px "IBM Plex Sans KR", "Apple SD Gothic Neo", sans-serif';const ls=wrap(c,msg,420,2),bw=Math.max(...ls.map(l=>c.measureText(l).width))+36,bh=ls.length*36+20,bx=256-bw/2,by=136-bh;
   rr(c,bx,by,bw,bh,16);c.fillStyle='rgba(255,255,255,.97)';c.fill();c.beginPath();c.moveTo(244,136);c.lineTo(256,148);c.lineTo(268,136);c.fill();
   c.fillStyle='#1c1d21';ls.forEach((l,i)=>c.fillText(l,bx+18,by+38+i*36))}
  a.tex.needsUpdate=true}
-function say(a,text){a.sayUntil=performance.now()+6000;drawName(a,text);if(a!==me&&a.jy===0&&a.vy===0)a.vy=3.4} // visitors hop when they talk
+function say(a,text){a.sayUntil=performance.now()+6000;drawName(a,text);if(a!==me&&a.jy===0&&a.vy===0)a.vy=2.8} // visitors hop when they talk
 
 /* ---------- text textures (redrawn once web fonts arrive) ---------- */
 function drawTexts(){
@@ -564,9 +585,9 @@ if(document.fonts&&document.fonts.load){const all=ART.map(a=>a.repo+(a.lang||'')
 
 /* ---------- movement: lobby (flat disc) or ramp (phi, r) ---------- */
 // yaw/pitch = where the camera looks; face = which way my character's body points
-const player={state:'lobby',x:2,z:-.4,y:0,phi:0,r:0,yaw:Math.PI/2,pitch:.14};
+const player={state:'lobby',x:1.45,z:1.45,y:0,phi:0,r:0,yaw:Math.PI/4,pitch:.14};  // facing the title wall at TPHI
 player.face=player.faceT=Math.atan2(-Math.sin(player.yaw),-Math.cos(player.yaw));
-const keys={},joyV={x:0,y:0};
+const keys={},joyV={x:0,y:0},joyS={x:0,y:0};  // joyV = raw finger input, joyS = the damped value the cat walks on
 let glide=null,focus=null,curIdx=-1,firstPerson=false;
 const cam={x:0,y:0,z:0,yaw:0,p:0,init:false};
 const inEntry=th=>th>.12&&th<OPEN-.08;
@@ -609,9 +630,15 @@ function visibleRect(){const w=innerWidth,h=innerHeight;if(label.hidden)return{x
 function focusPose(i){const A=arts[i],a=A.data,v=visibleRect(),fx=(v.x1-v.x0)/innerWidth,fy=(v.y1-v.y0)/innerHeight;
  const tv=Math.tan(camera.fov*Math.PI/360),th=tv*camera.aspect,c=Math.cos(A.phi),s=Math.sin(A.phi),yaw=Math.atan2(-c,-s);
  const fit=Math.max((a.h/2+.4)/(tv*fy),(a.w/2+.4)/(th*fx)),Ro=Rout(A.h);
- if(firstPerson)return{target:{m:'r',phi:A.phi,r:clamp(Ro-fit,Rin(A.h)+PT+PR,Ro-1.2)},yaw,pitch:0};
- const rs=Ro-1.3,phiS=A.phi-(a.w/2+.15)/rs,sp=polar(phiS,rs),d=clamp(fit+.6,2.9,Ro-1),cp=polar(A.phi,Ro-d);
- return{target:{m:'r',phi:phiS,r:rs},yaw,pitch:-.03,cam:{x:cp.x,y:A.h+EYE+.06,z:cp.z},face:Math.atan2(A.x-sp.x,A.z-sp.z)}}
+ // the small cat's eyes sit below the card centre (cards still hang at h+EYE), so 1st person tilts up to keep it framed
+ if(firstPerson){const rf=clamp(Ro-fit,Rin(A.h)+PT+PR,Ro-1.2);
+  return{target:{m:'r',phi:A.phi,r:rf},yaw,pitch:Math.atan2(EYE-EYE_FP,Math.max(.8,Math.hypot(A.x,A.z)-rf))}}
+ // back far enough that my whole cat (EYE_FP tall, standing 1.3 m from the wall) still fits under the card
+ const rs=Ro-1.3,d=clamp(Math.max(fit+.6,1.3+EYE_FP/Math.max(.25,tv*fy*.68)),2.9,Ro-1),cp=polar(A.phi,Ro-d),dep=d-1.3;
+ // stand just outside the edge of the card as the camera sees it, so the 2/3 cat stays inside the frame
+ const off=Math.min(a.w/2+.15,1.05*(a.w/2)*dep/d),phiS=A.phi-off/rs,sp=polar(phiS,rs);
+ // the camera watches from my cat's eye height and tilts half way up to the card: both fit in the picture
+ return{target:{m:'r',phi:phiS,r:rs},yaw,pitch:Math.atan2(EYE-EYE_FP,d)*.5,cam:{x:cp.x,y:A.h+EYE_FP,z:cp.z},face:Math.atan2(A.x-sp.x,A.z-sp.z)}}
 const shift={x:0,y:0};
 function updateViewShift(dt){const v=visibleRect(),w=innerWidth,h=innerHeight;
  const tx=Math.max(0,w/2-(v.x0+v.x1)/2),ty=Math.max(0,h/2-(v.y0+v.y1)/2),k=reduce?1:Math.min(1,dt*6);
@@ -621,13 +648,13 @@ function updateViewShift(dt){const v=visibleRect(),w=innerWidth,h=innerHeight;
  if(shift.x<.5&&shift.y<.5)camera.clearViewOffset();else camera.setViewOffset(w,h,shift.x,shift.y,w,h);camera.updateProjectionMatrix()}
 const camRay=new THREE.Raycaster(),rayO=new THREE.Vector3(),rayD=new THREE.Vector3();
 function updateCamera(dt){
- if(firstPerson){camera.position.set(player.x,player.y+me.jy+EYE,player.z);camera.rotation.set(player.pitch,player.yaw,0);cam.init=false;return}
+ if(firstPerson){camera.position.set(player.x,player.y+me.jy+EYE_FP,player.z);camera.rotation.set(player.pitch,player.yaw,0);cam.init=false;return}
  let tx,ty,tz,tyaw,tp,rate=12;
  if(focus&&focus.ready){tx=focus.cam.x;ty=focus.cam.y;tz=focus.cam.z;tyaw=focus.yaw;tp=focus.pitch;rate=4}
  else{const cp=Math.cos(player.pitch),fx=-Math.sin(player.yaw)*cp,fy=Math.sin(player.pitch),fz=-Math.cos(player.yaw)*cp,S=sho(),CD=camD();
-  rayO.set(player.x+Math.cos(player.yaw)*S,player.y+1.5+me.jy*.6,player.z-Math.sin(player.yaw)*S);rayD.set(-fx,-fy,-fz);
+  rayO.set(player.x+Math.cos(player.yaw)*S,player.y+CAM_PIV+me.jy*.6,player.z-Math.sin(player.yaw)*S);rayD.set(-fx,-fy,-fz);
   camRay.set(rayO,rayD);camRay.far=CD+.3;const hit=camRay.intersectObjects(solids,false)[0];const d=hit?Math.max(.25,hit.distance-.3):CD;
-  tx=rayO.x-fx*d;ty=Math.max(player.y+.25,rayO.y-fy*d);tz=rayO.z-fz*d;tyaw=player.yaw;tp=player.pitch}
+  tx=rayO.x-fx*d;ty=Math.max(player.y+.2,rayO.y-fy*d);tz=rayO.z-fz*d;tyaw=player.yaw;tp=player.pitch}
  const k=cam.init?1-Math.exp(-dt*rate):1;cam.init=true;
  cam.x+=(tx-cam.x)*k;cam.y+=(ty-cam.y)*k;cam.z+=(tz-cam.z)*k;cam.yaw+=angDiff(tyaw,cam.yaw)*k;cam.p+=(tp-cam.p)*k;
  cam.y=clamp(cam.y,.3,HTOP-.3);const cr=Math.hypot(cam.x,cam.z),mr=Rout(cam.y)-.15;if(cr>mr){cam.x*=mr/cr;cam.z*=mr/cr}
@@ -693,10 +720,14 @@ function lookBy(dx,dy,k){
  if(focus&&focus.ready){player.yaw=cam.yaw;player.pitch=-.2}
  stopAuto();player.yaw-=dx*k;player.pitch=clamp(player.pitch-dy*k,firstPerson?-.8:-.95,firstPerson?.9:.45);dismissHint()}
 // touch/pen: the whole canvas is an invisible joystick (drag = walk, tap = jump, two fingers = look around)
-const TAP_PX=10,TAP_MS=500,DEAD_PX=12,SPAN_PX=60,ROT_K=.005,ROT_DEAD=8;
+// CEO 2026-11-13: the phone joystick felt too fast. Three changes, all tunable here:
+//  SPAN_PX 60 -> 100 (full speed needs a 112px drag instead of 72px), a squared curve so a short drag creeps,
+//  and JOY_UP/JOY_DN damping in tick() so speed ramps instead of snapping. Lifting the finger still stops at once.
+const TAP_PX=10,TAP_MS=500,DEAD_PX=12,SPAN_PX=100,ROT_K=.0035,ROT_DEAD=8;
+const JOY_MIN=.14,JOY_UP=5,JOY_DN=10;   // speed just past the dead zone / ramp-up rate / ramp-down rate
 const fingers=new Map();           // live touch pointers: id -> {x0,y0,x,y,t0,maxD,walk,spent}
 let rot=null;                 // two-finger look state: origin + last midpoint
-function clearWalk(){joyV.x=joyV.y=0}
+function clearWalk(){joyV.x=joyV.y=0;joyS.x=joyS.y=0}   // both, so letting go stops the cat in the same frame
 function resetTouch(){fingers.clear();rot=null;clearWalk()}
 function midOf(){let mx=0,my=0;fingers.forEach(q=>{mx+=q.x;my+=q.y});return{x:mx/fingers.size,y:my/fingers.size}}
 // a finger that took part in a 2+ finger gesture never walks or taps again (it has to be lifted first)
@@ -712,7 +743,7 @@ canvas.addEventListener('pointerdown',e=>{
 canvas.addEventListener('pointermove',e=>{
  if(e.pointerType==='mouse'){
   if(drag&&e.pointerId===drag.id){const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.x=e.clientX;drag.y=e.clientY;drag.moved+=Math.abs(dx)+Math.abs(dy);
-   if(drag.moved>6)lookBy(dx,dy,.0042)}
+   if(drag.moved>6)lookBy(dx,dy,.003)}
   else if(!drag)canvas.classList.toggle('hot',pick(e)>=0);
   return}
  const q=fingers.get(e.pointerId);if(!q)return;
@@ -724,7 +755,7 @@ canvas.addEventListener('pointermove',e=>{
  if(fingers.size!==1||q.spent)return;
  const dx=q.x-q.x0,dy=q.y-q.y0,d=Math.hypot(dx,dy);
  if(!q.walk){if(q.maxD<=DEAD_PX)return;q.walk=true;stopAuto();dismissHint()}
- const m=clamp((d-DEAD_PX)/SPAN_PX,0,1);                 // 12px -> 0, 72px -> full speed
+ const m0=clamp((d-DEAD_PX)/SPAN_PX,0,1),m=JOY_MIN+(1-JOY_MIN)*m0*m0;   // 12px -> slow creep, 112px -> full speed
  joyV.x=d>0?dx/d*m:0;joyV.y=d>0?dy/d*m:0});
 function endDrag(e,click){if(!drag||e.pointerId!==drag.id)return;
  if(click&&drag.moved<=6){const i=pick(e);if(i>=0)focusArt(i);else if(isSmall()||isCoarse()){hideLabel();setChat(false)}}
@@ -776,7 +807,7 @@ function drawMap(){if(mapC.offsetParent===null)return;if(!mapW)sizeMap();if(!map
 function updateLevel(){$('lvl').textContent=player.state==='lobby'?'로비':`램프 ${turnOf(player.phi)}바퀴 · ${player.y.toFixed(1)} m`}
 
 /* ---------- loop ---------- */
-const CR=.36; // body radius for character-to-character collisions
+const CR=.24; // body radius for character-to-character collisions (.36 * CS, matching the 2/3 bodies)
 // would stepping to (x,z) bring visitor o closer into someone it is already touching?
 function blockedBy(o,x,z){const y=hA(o.phi),cur=o.g.position;
  const hits=(qx,qy,qz)=>{if(Math.abs(qy-y)>1.2)return false;const dn=Math.hypot(x-qx,z-qz);return dn<2*CR+.08&&dn<Math.hypot(cur.x-qx,cur.z-qz)};
@@ -816,12 +847,15 @@ let last=performance.now(),frame=0;
 function tick(now){const dt=Math.min(.05,(now-last)/1000);last=now;frame++;
  // 3rd person: arrows/WASD/finger all steer the cat (relative to the camera); 1st person: ←/→ and sideways dragging turn the head
  const kR=keys.KeyD||(!firstPerson&&keys.ArrowRight),kL=keys.KeyA||(!firstPerson&&keys.ArrowLeft);
- let f=(keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS||keys.ArrowDown?1:0)-joyV.y,st=(kR?1:0)-(kL?1:0)+(firstPerson?0:joyV.x);
- const turn=(keys.KeyQ?1:0)-(keys.KeyE?1:0)+(firstPerson?(keys.ArrowLeft?1:0)-(keys.ArrowRight?1:0)-joyV.x:0);
+ // damp the finger input so a quick drag ramps up instead of snapping to full speed (clearWalk still stops instantly)
+ const jk=Math.min(1,dt*(Math.hypot(joyV.x,joyV.y)<Math.hypot(joyS.x,joyS.y)?JOY_DN:JOY_UP));
+ joyS.x+=(joyV.x-joyS.x)*jk;joyS.y+=(joyV.y-joyS.y)*jk;
+ let f=(keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS||keys.ArrowDown?1:0)-joyS.y,st=(kR?1:0)-(kL?1:0)+(firstPerson?0:joyS.x);
+ const turn=(keys.KeyQ?1:0)-(keys.KeyE?1:0)+(firstPerson?(keys.ArrowLeft?1:0)-(keys.ArrowRight?1:0)-joyS.x:0);
  const ox=player.x,oz=player.z,mag=Math.hypot(f,st);
  if((turn||mag>.08)&&focus&&focus.ready){player.yaw=cam.yaw;player.pitch=-.2}
- if(turn){stopAuto();player.yaw+=turn*1.9*dt;dismissHint()}
- if(mag>.08){stopAuto();dismissHint();if(mag>1){f/=mag;st/=mag}const sp=(keys.ShiftLeft||keys.ShiftRight?6.5:WALK)*dt,sy=Math.sin(player.yaw),cy=Math.cos(player.yaw);
+ if(turn){stopAuto();player.yaw+=turn*1.4*dt;dismissHint()}
+ if(mag>.08){stopAuto();dismissHint();if(mag>1){f/=mag;st/=mag}const sp=(keys.ShiftLeft||keys.ShiftRight?RUN:WALK)*dt,sy=Math.sin(player.yaw),cy=Math.cos(player.yaw);
   moveBy((-sy*f+cy*st)*sp,(-cy*f-sy*st)*sp)}
  if(glide)stepGlide(dt);
  const mdx=player.x-ox,mdz=player.z-oz,moving=Math.hypot(mdx,mdz)>.0005;
@@ -829,12 +863,12 @@ function tick(now){const dt=Math.min(.05,(now-last)/1000);last=now;frame++;
  player.face+=angDiff(player.faceT,player.face)*Math.min(1,dt*10);
  // while you steer, the camera swings round behind the cat so you keep seeing its back (slower when walking straight at the camera)
  if(!firstPerson&&mag>.08&&moving&&!glide&&!(drag&&drag.moved>6)&&!(rot&&rot.on)){const d=angDiff(player.face+Math.PI,player.yaw);
-  player.yaw+=d*Math.min(1,dt*(Math.abs(d)>2.6?.9:3.2));player.pitch+=(-.2-player.pitch)*Math.min(1,dt*1.2)}
+  player.yaw+=d*Math.min(1,dt*(Math.abs(d)>2.6?.8:2.6));player.pitch+=(-.2-player.pitch)*Math.min(1,dt*1.2)}
  separate();
  const air=stepJump(me,dt);
  me.g.position.set(player.x,player.y+me.jy,player.z);me.g.rotation.y=player.face;animateWalk(me,moving?Math.min(dt,Math.hypot(mdx,mdz)/WALK):dt,moving,air);
  updateCamera(dt);updateViewShift(dt);
- if(!firstPerson)me.g.visible=Math.hypot(camera.position.x-player.x,camera.position.z-player.z)>.75;
+ if(!firstPerson)me.g.visible=Math.hypot(camera.position.x-player.x,camera.position.z-player.z)>.5;
  updateAvatars(dt,now);
  if(frame%2===0)drawMap();
  if(frame%10===0)updateLevel();
