@@ -342,7 +342,7 @@ python3 -m http.server 8000 --directory dist
 
 | 구역 | 내용 |
 |---|---|
-| `exhibition data` | 전시 작품(저장소 8점), 관람객 고양이, 채팅 문구 |
+| `exhibition data` | 전시 작품(저장소 6점), 관람객 고양이, 채팅 문구 |
 | `building` (상수) | 나선 램프 치수: `RISE`, `TURNS`, 반지름 함수, 높이 = `K*phi` |
 | `procedural paintings` | 캔버스 2D로 그리는 저장소 카드 텍스처 |
 | `building` (메시) | 램프·난간·외벽·로비·천창, 카메라 충돌용 `solids` |
