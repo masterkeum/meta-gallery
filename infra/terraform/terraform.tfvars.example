@@ -1,0 +1,57 @@
+# 메타 갤러리 인프라 - 변수 값 예시
+#
+# 사용법: 이 파일을 terraform.tfvars로 복사한 뒤 <> 자리표시자를 실제 값으로 바꾼다.
+#   cp terraform.tfvars.example terraform.tfvars
+#
+# 중요
+#   - terraform.tfvars는 저장소에 커밋하지 않는다(.gitignore 담당: 팀원 1).
+#   - AWS 액세스 키/시크릿/세션 토큰은 이 파일에 적지 않는다.
+#     자격증명은 환경변수나 AWS CLI 프로파일로만 전달한다.
+#       예) export AWS_PROFILE=meta-gallery
+#   - 계정 ID, DB 비밀번호, DuckDNS 토큰도 여기에 넣지 않는다.
+
+/* ---------- 필수 ---------- */
+
+# TCP 22를 허용할 관리자 접속 IP. 반드시 /32로 지정한다.
+# 실제 값은 저장소에 두지 않는다 — 이 파일을 terraform.tfvars(미추적)로 복사해 채운다.
+# 현재 공인 IP 확인: curl -s https://checkip.amazonaws.com
+ssh_allowed_cidrs = ["<ADMIN_PUBLIC_IP>/32"]
+
+# S3 버킷 이름 3개. 전역에서 유일해야 하므로 기본값을 코드에 두지 않는다.
+# 이름 규칙은 docs/infra/aws-resources.md 2장을 따른다.
+#   <프로젝트>-assets-<env>-<리전약칭>  /  <프로젝트>-backups-<리전약칭>
+# 이미 선점된 이름이면 아래 bucket_name_suffix 로 계정 ID 뒤 4자리를 붙인다.
+assets_prod_bucket_name = "<ASSETS_BUCKET_PROD>"
+assets_dev_bucket_name  = "<ASSETS_BUCKET_DEV>"
+backups_bucket_name     = "<BACKUPS_BUCKET>"
+
+/* ---------- 권장 ---------- */
+
+# Lightsail 콘솔(시드니 리전, ap-southeast-2)에서 미리 만들어 둔 키페어 이름.
+# 지정하지 않으면 리전 기본 키페어가 쓰인다(권장하지 않음).
+ssh_key_pair_name = "<LIGHTSAIL_KEY_PAIR_NAME>"
+
+# 쓸 AWS CLI named profile 이름. 비워 두면 표준 탐색 순서를 따른다.
+# aws_profile = "<AWS_CLI_PROFILE_NAME>"
+
+/* ---------- 선택 (기본값으로 두면 계획서 고정값과 같다) ---------- */
+
+# aws_region        = "ap-southeast-2"
+# availability_zone = "ap-southeast-2a"
+# instance_name     = "meta-gallery-app"
+# blueprint_id      = "ubuntu_24_04"
+# bundle_id         = "micro_3_2"
+# static_ip_name    = "meta-gallery-ip"
+
+# 자동 스냅샷 시각(UTC 정시). 19:00 UTC = 04:00 KST (계획서 1-5 고정값).
+# pg_dump(03:10 KST)보다 50분 뒤다. 바꾸면 백업 타이머와의 간격을 다시 확인한다.
+# auto_snapshot_time_utc = "19:00"
+
+# 버킷 이름이 이미 선점됐을 때만 쓴다(계정 ID 뒤 4자리).
+# `terraform output bucket_name_suffix_hint`로 확인한 값을 넣는다.
+# bucket_name_suffix = "<ACCOUNT_ID_LAST4>"
+
+# 태그 추가가 필요하면.
+# extra_tags = {
+#   CostCenter = "<COST_CENTER>"
+# }

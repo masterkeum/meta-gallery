@@ -1,0 +1,25 @@
+# =============================================================================
+# meta-gallery 백업 타이머 — 매일 03:10 KST (계획서 1-5)
+#   설치 위치 : /etc/systemd/system/meta-gallery-backup.timer
+#   활성화    : systemctl enable --now meta-gallery-backup.timer
+#   확인      : systemctl list-timers meta-gallery-backup.timer
+# =============================================================================
+[Unit]
+Description=Daily meta-gallery PostgreSQL backup at 03:10 KST
+Documentation=file:///srv/meta-gallery/docs/infra/server-layout.md
+
+[Timer]
+# 타임존을 명시한다(systemd 252+ 지원, Ubuntu 24.04 = systemd 255).
+# provision.sh가 서버 타임존도 Asia/Seoul로 맞추므로 둘 중 하나가 어긋날 일은 없다.
+# 만약 구버전 systemd에서 "Failed to parse calendar"가 나면
+# 아래 줄을 OnCalendar=*-*-* 03:10:00 으로 바꾸고 서버 타임존이 KST인지 확인한다.
+OnCalendar=*-*-* 03:10:00 Asia/Seoul
+# 서버가 꺼져 있어 놓친 실행은 부팅 후 따라잡는다.
+Persistent=true
+# 동시 I/O 몰림 완화(최대 2분 지연).
+RandomizedDelaySec=120
+AccuracySec=1min
+Unit=meta-gallery-backup.service
+
+[Install]
+WantedBy=timers.target

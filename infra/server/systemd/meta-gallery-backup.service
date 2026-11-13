@@ -1,0 +1,31 @@
+# =============================================================================
+# meta-gallery PostgreSQL 백업 (oneshot, timer가 호출)
+#   설치 위치 : /etc/systemd/system/meta-gallery-backup.service
+#   수동 실행 : systemctl start meta-gallery-backup.service
+#   로그      : journalctl -u meta-gallery-backup.service  /  /var/log/meta-gallery/backup.log
+# =============================================================================
+[Unit]
+Description=meta-gallery PostgreSQL backup (pg_dump -Fc + S3 upload)
+Documentation=file:///srv/meta-gallery/docs/infra/server-layout.md
+After=postgresql.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# pg_dump는 스크립트 안에서 runuser -u postgres 로 권한을 내려 실행한다.
+# root가 필요한 이유: /var/backups/meta-gallery(0700 root) 쓰기,
+#                     /etc/meta-gallery/backup.env(0600 root) 읽기.
+User=root
+Group=root
+ExecStart=/usr/local/sbin/backup-postgres.sh all
+TimeoutStartSec=1800
+Nice=10
+IOSchedulingClass=idle
+
+# runuser로 postgres 권한을 내리기만 하므로 setuid 획득이 필요 없다.
+# 만약 runuser가 PAM 오류로 실패하면 이 값을 false로 바꾼다.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/backups/meta-gallery /var/log/meta-gallery

@@ -1,0 +1,76 @@
+# 메타 갤러리 저장소 제외 목록
+# 기준: docs/plans/2026-11-13-aws-infra.md 1-6
+# 주관: IT본부 인프라팀
+
+# ---------- 빌드 산출물 ----------
+# dist/ 는 scripts/build-standalone.py 가 만드는 산출물이다. CI가 빌드한다.
+dist/
+*.tmp
+*.bak
+
+# ---------- 비밀값 / 환경 파일 ----------
+# *.env, .env, .env.* 는 추적하지 않고 예시 파일만 추적한다.
+.env
+.env.*
+*.env
+!*.env.example
+!.env.example
+
+# ---------- 키 / 인증서 ----------
+*.pem
+*.key
+*.ppk
+*.p12
+*.pfx
+id_rsa
+id_rsa.*
+id_ed25519
+id_ed25519.*
+known_hosts
+*.crt
+
+# ---------- Terraform ----------
+.terraform/
+.terraform.lock.hcl.bak
+terraform.tfstate*
+terraform.tfvars
+!terraform.tfvars.example
+crash.log
+crash.*.log
+*.tfplan
+*.tfplan.*
+
+# ---------- AWS / 자격증명 ----------
+.aws/
+credentials
+
+# ---------- 내부 작업 맥락 ----------
+# 에이전트 메모리·사내 운영 규칙은 공개 저장소에 올리지 않는다.
+# 정보보호본부 점검 결과(2026-11-13) 권고: 개별 치환보다 디렉터리째 제외가 안전하다.
+.claude/
+
+# ---------- 런타임 / 패키지 ----------
+node_modules/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.log
+logs/
+
+# ---------- OS / 편집기 ----------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ---------- 임시 확인 파일 ----------
+_test.html
+*_test.html

@@ -1,0 +1,844 @@
+<title>금경희의 포트폴리오 개인전</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&family=Nanum+Myeongjo:wght@700;800&display=swap">
+<style>
+/* Layout: full-bleed spiral atrium; museum-label panels pinned to the screen corners */
+:root{
+  --bg:#dcd9d2; --panel:rgba(251,250,247,.86); --paper:#fbfaf7; --fg:#1c1d21; --muted:#5d5f66;
+  --line:rgba(28,29,33,.13); --accent:#2d45c4; --on-accent:#ffffff; --live:#1d9a5f;
+  --shadow:0 10px 30px rgba(20,20,30,.12);
+  --f-display:"Nanum Myeongjo","AppleMyungjo","Batang",serif;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121317; --panel:rgba(22,23,28,.84); --paper:#1b1c21; --fg:#eceae4; --muted:#a2a3ab;
+  --line:rgba(236,234,228,.15); --accent:#93a4ff; --on-accent:#10142a; --live:#4fd197;
+  --shadow:0 10px 30px rgba(0,0,0,.4); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121317; --panel:rgba(22,23,28,.84); --paper:#1b1c21; --fg:#eceae4; --muted:#a2a3ab;
+  --line:rgba(236,234,228,.15); --accent:#93a4ff; --on-accent:#10142a; --live:#4fd197;
+  --shadow:0 10px 30px rgba(0,0,0,.4); color-scheme:dark}
+
+[hidden]{display:none!important}
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0;pointer-events:none}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);overflow:hidden;-webkit-font-smoothing:antialiased;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+input{-webkit-user-select:text;user-select:text}
+button{touch-action:manipulation}
+#stage{position:fixed;inset:0}
+.scene{display:block;width:100%;height:100%;touch-action:none;cursor:grab;outline:none}
+.scene.dragging{cursor:grabbing}
+.scene.hot{cursor:pointer}
+.nogl{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;color:var(--muted)}
+
+.ui{position:fixed;z-index:2}
+.card{background:var(--panel);-webkit-backdrop-filter:blur(14px) saturate(1.2);backdrop-filter:blur(14px) saturate(1.2);
+  border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}
+.top{top:calc(16px + env(safe-area-inset-top,0px))}
+
+/* exhibition header */
+.hall{left:calc(16px + env(safe-area-inset-left,0px));width:272px;padding:14px 16px;display:grid;gap:6px}
+.eyebrow{margin:0;font-size:11.5px;letter-spacing:.06em;color:var(--muted);display:flex;align-items:center;gap:8px}
+.live{width:7px;height:7px;border-radius:50%;background:var(--live);box-shadow:0 0 0 3px rgba(29,154,95,.18)}
+h1{margin:0;font-family:var(--f-display);font-weight:800;font-size:26px;letter-spacing:-.01em;line-height:1.15;text-wrap:balance;word-break:keep-all}
+.meta{margin:0;font-family:var(--f-mono);font-size:11.5px;color:var(--muted)}
+.people{display:flex;align-items:center;gap:8px;margin-top:4px;padding-top:10px;border-top:1px solid var(--line);font-size:12.5px}
+.faces{display:flex}
+.faces span{width:22px;height:22px;border-radius:50%;border:2px solid var(--paper);margin-left:-6px;display:grid;place-items:center;
+  font-size:10px;font-weight:600;color:#fff}
+.faces span:first-child{margin-left:0}
+.faces{padding-top:5px}
+.faces span{position:relative}
+.faces span::before,.faces span::after{content:"";position:absolute;top:-6px;width:9px;height:9px;background:inherit;clip-path:polygon(50% 0,100% 100%,0 100%)}
+.faces span::before{left:0;transform:rotate(-22deg)}
+.faces span::after{right:0;transform:rotate(22deg)}
+.tag{font-family:var(--f-mono);font-size:10px;letter-spacing:.04em;padding:1px 6px;border:1px solid var(--line);border-radius:4px;color:var(--muted);font-weight:400}
+
+/* floor plan */
+.map{right:calc(16px + env(safe-area-inset-right,0px));margin:0;padding:10px 10px 8px;width:176px}
+.map figcaption{font-family:var(--f-mono);font-size:11px;color:var(--muted);display:flex;justify-content:space-between;gap:8px;margin-bottom:6px}
+#lvl{color:var(--fg);font-variant-numeric:tabular-nums}
+#map{display:block;width:100%;height:156px}
+
+/* chat */
+.chat{left:calc(16px + env(safe-area-inset-left,0px));bottom:calc(84px + env(safe-area-inset-bottom,0px));width:300px;height:262px;
+  display:flex;flex-direction:column;overflow:hidden}
+.chat-head{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);font-size:12.5px;font-weight:600}
+.msgs{list-style:none;margin:0;padding:10px 14px;flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:7px;font-size:13px;line-height:1.45;
+  -webkit-user-select:text;user-select:text}
+.msgs li{min-width:0;overflow-wrap:anywhere}
+.msgs b{font-weight:600;margin-right:6px}
+.msgs .me b{color:var(--accent)}
+.chat form{display:flex;gap:6px;padding:8px;border-top:1px solid var(--line)}
+.chat input{flex:1;min-width:0;font:inherit;font-size:16px;padding:7px 10px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--fg)}
+
+/* tour bar */
+.tour{bottom:calc(16px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:6px;padding:6px}
+.now{display:grid;text-align:left;gap:1px;min-width:180px;max-width:240px;padding:4px 12px;background:none;border:0;color:inherit;font:inherit;cursor:pointer;border-radius:8px}
+.now:hover{background:var(--line)}
+.now .idx{font-family:var(--f-mono);font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.now .t{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btn{font:inherit;font-size:13px;font-weight:600;padding:9px 14px;border-radius:8px;border:1px solid transparent;background:var(--accent);color:var(--on-accent);cursor:pointer;white-space:nowrap}
+.btn:hover{filter:brightness(1.08)}
+a.btn{display:inline-block;text-decoration:none}
+.btn.ghost{background:transparent;color:var(--fg);border-color:var(--line)}
+.btn.ghost:hover{background:var(--line);filter:none}
+#viewToggle[aria-pressed="true"]{background:var(--fg);color:var(--paper);border-color:transparent}
+.chat-toggle{display:none}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* wall label */
+.label{right:calc(16px + env(safe-area-inset-right,0px));top:calc(226px + env(safe-area-inset-top,0px));width:330px;
+  max-height:calc(100dvh - 330px);overflow-y:auto;background:var(--paper);border:1px solid var(--line);border-radius:2px;
+  box-shadow:var(--shadow);padding:18px 20px 16px;display:grid;gap:12px;overscroll-behavior:contain}
+.label-top{display:flex;justify-content:space-between;align-items:center}
+.no{font-family:var(--f-mono);font-size:12px;color:var(--accent);letter-spacing:.06em}
+.x{width:32px;height:32px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--fg);font-size:18px;line-height:1;cursor:pointer}
+.label h2{margin:0;font-family:var(--f-mono);font-weight:500;font-size:19px;line-height:1.3;overflow-wrap:anywhere}
+.artist{margin:-6px 0 0;font-size:14px}
+.born{color:var(--muted);font-family:var(--f-mono);font-size:12px}
+.specs{margin:0;display:grid;gap:6px;padding:10px 0;border-block:1px solid var(--line)}
+.specs div{display:grid;grid-template-columns:84px 1fr;gap:10px;font-size:12.5px}
+.specs dt{color:var(--muted)}
+.specs dd{margin:0;font-variant-numeric:tabular-nums;min-width:0;overflow-wrap:anywhere}
+#lRepo{font-family:var(--f-mono);font-size:11.5px;color:var(--accent)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--muted);margin-right:6px}
+.note{margin:0;font-size:13.5px;line-height:1.7}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+#like[aria-pressed="false"]{background:transparent;color:var(--fg);border-color:var(--line)}
+.fine{margin:0;font-size:11px;color:var(--muted)}
+
+/* hint */
+.hint{left:50%;top:62%;transform:translateX(-50%);margin:0;padding:9px 16px;border-radius:14px;background:rgba(20,21,26,.74);color:#f4f3ef;
+  font-size:12.5px;width:max-content;max-width:min(460px,calc(100% - 32px));text-align:center;transition:opacity .45s;pointer-events:none;line-height:1.6}
+.hint.fade{opacity:0}
+.hint kbd{font-family:var(--f-mono);font-size:11px;padding:1px 5px;border:1px solid rgba(255,255,255,.35);border-radius:4px;margin:0 1px}
+.touch{display:none}
+
+@media (pointer:coarse){
+  .chat{display:none}
+  .chat.open{display:flex}
+  .chat-toggle{display:inline-block}
+  .desk{display:none}
+  .touch{display:inline}
+  .map{display:none}
+  .label{top:calc(16px + env(safe-area-inset-top,0px));max-height:calc(100dvh - 120px)}
+}
+
+@media (max-width:720px){
+  .hall{width:auto;right:calc(16px + env(safe-area-inset-right,0px));padding:10px 12px;gap:3px}
+  h1{font-size:21px}
+  .meta{display:none}
+  .people{padding-top:7px;margin-top:2px}
+  .chat{display:none;left:calc(16px + env(safe-area-inset-left,0px));right:calc(16px + env(safe-area-inset-right,0px));width:auto;height:min(46dvh,320px)}
+  .chat.open{display:flex}
+  .chat-toggle{display:inline-block}
+  .map{display:none}
+  .label{left:calc(16px + env(safe-area-inset-left,0px));right:calc(16px + env(safe-area-inset-right,0px));width:auto;top:auto;
+    bottom:calc(84px + env(safe-area-inset-bottom,0px));max-height:54dvh;padding:14px 16px;gap:10px}
+  body.sheet .hall{display:none}
+  .label h2{font-size:21px}
+  .tour{left:calc(16px + env(safe-area-inset-left,0px));right:calc(16px + env(safe-area-inset-right,0px));transform:none;gap:4px}
+  .tour .btn{padding:9px 11px}
+  .now{min-width:0;flex:1;max-width:none;padding-inline:6px}
+  .long{display:none}
+}
+/* landscape phones */
+@media (max-height:520px){
+  .meta,.people{display:none}
+  .hall{width:auto;max-width:260px;padding:8px 12px;gap:2px}
+  h1{font-size:18px}
+  .chat{height:min(62dvh,240px)}
+  .label{top:calc(12px + env(safe-area-inset-top,0px));bottom:calc(76px + env(safe-area-inset-bottom,0px));max-height:none;padding:12px 16px;gap:8px}
+  .label h2{font-size:19px}
+  .note{line-height:1.55}
+  .hint{top:auto;bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+  .tour{bottom:calc(10px + env(safe-area-inset-bottom,0px))}
+}
+@media (prefers-reduced-motion: reduce){.hint{transition:none}}
+</style>
+
+<div id="stage"></div>
+
+<p class="sr-only">손가락으로 끌어 이동, 탭하면 점프, 작품 탭하면 설명. 아래 투어 바의 버튼으로도 작품을 차례로 볼 수 있습니다.</p>
+
+<header class="ui top card hall">
+  <p class="eyebrow"><span class="live"></span>상시 전시 · 나선 램프관</p>
+  <h1>금경희의 포트폴리오 개인전</h1>
+  <p class="meta">Portfolio Solo Exhibition · 공개 저장소 8점 · github.com/masterkeum</p>
+  <div class="people"><div class="faces" id="faces"></div><span>지금 5명 관람 중</span><span class="tag">예시</span></div>
+</header>
+
+<figure class="ui top card map">
+  <figcaption><span>평면도</span><span id="lvl">로비</span></figcaption>
+  <canvas id="map" aria-label="전시관 평면도와 현재 위치"></canvas>
+</figure>
+
+<section class="ui card chat" id="chat" aria-label="전시실 대화">
+  <div class="chat-head"><span>전시실 대화</span><span class="tag">예시</span></div>
+  <ol class="msgs" id="msgs" aria-live="polite"></ol>
+  <form id="chatForm">
+    <input id="chatInput" placeholder="메시지를 입력하세요" maxlength="120" autocomplete="off" enterkeyhint="send" aria-label="메시지">
+    <button class="btn" type="submit">보내기</button>
+  </form>
+</section>
+
+<aside class="ui label" id="label" hidden aria-live="polite">
+  <div class="label-top"><span class="no" id="lNo">No. 01</span><button class="x" id="lClose" aria-label="설명 닫기">×</button></div>
+  <h2 id="lTitle"></h2>
+  <p class="artist"><span id="lArtist"></span> <span class="born" id="lBorn"></span></p>
+  <dl class="specs">
+    <div><dt>주 언어</dt><dd><span class="dot" id="lDot"></span><span id="lLang"></span></dd></div>
+    <div><dt>최근 갱신</dt><dd id="lUpdated"></dd></div>
+    <div><dt>저장소</dt><dd><a id="lRepo" href="https://github.com/masterkeum" target="_blank" rel="noopener noreferrer"></a></dd></div>
+    <div><dt>걸린 곳</dt><dd id="lWhere"></dd></div>
+  </dl>
+  <p class="note" id="lNote"></p>
+  <div class="actions">
+    <a class="btn" id="lLink" href="https://github.com/masterkeum" target="_blank" rel="noopener noreferrer">GitHub에서 열기 ↗</a>
+    <button class="btn" id="like" aria-pressed="false">좋아요 <span id="likeN"></span></button>
+    <button class="btn ghost" id="lNext">다음 작품</button>
+  </div>
+  <p class="fine">저장소 정보는 2026-11-13에 조회한 값입니다. 좋아요는 이 목업 안에서만 세며 GitHub 스타 수가 아닙니다.</p>
+</aside>
+
+<p class="ui hint" id="hint">
+  <span class="desk">방향키나 <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>로 걸으면 카메라가 고양이 뒤를 따라갑니다. 로비 오른쪽 입구에서 나선 램프를 올라가 보세요. <kbd>Space</kbd> 점프, <kbd>Q</kbd><kbd>E</kbd>나 드래그로 시점 회전, <kbd>V</kbd>로 1인칭/3인칭.</span>
+  <span class="touch">화면 아무 곳이나 손가락으로 끌면 고양이가 그 방향으로 걷습니다. 나선 램프를 올라가 보세요. 화면을 가볍게 탭하면 점프하고, 작품을 탭하면 설명이 열립니다. 두 손가락으로 끌면 시점이 돌아갑니다.</span>
+</p>
+
+<nav class="ui card tour" aria-label="작품 순서대로 보기">
+  <button class="btn ghost" id="prev">이전</button>
+  <button class="now" id="now"><span class="idx" id="idx">— / 8</span><span class="t" id="nowTitle">가이드 투어</span></button>
+  <button class="btn" id="next">다음<span class="long"> 작품</span></button>
+  <button class="btn ghost" id="viewToggle" aria-pressed="false" title="1인칭 시점으로 보기 (V)">1인칭</button>
+  <button class="btn ghost chat-toggle" id="chatToggle" aria-expanded="false" aria-controls="chat">대화</button>
+</nav>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const TAU=Math.PI*2;
+const angDiff=(t,c)=>((t-c)%TAU+3*Math.PI)%TAU-Math.PI;
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const isSmall=()=>matchMedia('(max-width:720px), (max-height:520px)').matches;
+const isCoarse=()=>matchMedia('(pointer:coarse)').matches;
+function rng(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+
+/* ---------- exhibition data ----------
+   The exhibits are the public (non-fork) repositories of GitHub user masterkeum, as listed on 2026-11-13.
+   Everything here is a constant: nothing is fetched at runtime. `desc`/`stack` are copied from the
+   repository description; repositories without a description say so instead of inventing one. */
+const GH_USER='masterkeum',GH_AUTHOR='금경희',AS_OF='2026-11-13';
+const ART=[
+ {repo:'youtube-trend-finder',lang:'Java',updated:'2026-11-05',
+  desc:'YouTube에서 요즘 뜨는 영상을 찾고 관심 영상·채널 추이를 관리하는 웹 서비스',
+  stack:['Spring Boot 3.5','JPA','QueryDSL','JSP','Oracle','Docker','k8s','Jenkins']},
+ {repo:'text2sql-agent',lang:'Python',updated:'2026-11-05',
+  desc:'질문을 Oracle SQL로 바꿔 읽기 전용으로 실행하는 Text-to-SQL 챗봇',
+  stack:['Streamlit','Claude Code CLI','MCP tool calling']},
+ {repo:'swat-acs-helper',lang:'Python',updated:'2026-11-04',
+  desc:'콜센터 자동발신(SWAT ACS) 보조 도구: 발신번호 원클릭 변경 · 잔여 데이터 소진 예상 모니터 · 데이터 분할',
+  stack:['Python','tkinter','Oracle']},
+ {repo:'data-automation-system',lang:'Python',updated:'2026-07-19',desc:'',stack:[]},
+ {repo:'masterkeum.github.io',lang:'HTML',updated:'2026-07-12',desc:'',stack:[]},
+ {repo:'ezmemory-privacy',lang:'HTML',updated:'2026-06-14',desc:'',stack:[]},
+ {repo:'finalproject_dev',lang:null,updated:'2024-05-07',desc:'',stack:[]},
+ {repo:'SpartaDungeon_TeamProject',lang:'C#',updated:'2024-01-12',desc:'스파르타 던전 Text 게임 (팀 과제)',stack:[]},
+];
+const NO_DESC='GitHub에 설명이 등록되지 않은 저장소입니다. 주 언어와 최근 갱신일만 표시합니다.';
+// every exhibit is hung as the same 1.6 × 1.0 m framed repository card
+ART.forEach(a=>{a.title=a.repo;a.artist=GH_AUTHOR;a.w=1.6;a.h=1;a.frame='black';a.likes=0;
+ a.url='https://github.com/'+GH_USER+'/'+a.repo;a.path=GH_USER+'/'+a.repo;
+ a.note=a.desc?a.desc+(a.stack.length?' ('+a.stack.join(', ')+')':''):NO_DESC});
+const N=ART.length;
+/* ---------- building: one helical ramp climbing the inside of a widening drum ----------
+   A point on the ramp is (phi, r): phi = unwrapped angle (radians, 0 at the entrance), height = K*phi. */
+// TURNS was 2.25 for 10 works; with 8 works 2 turns keeps the spacing between frames (~1.58 rad) close to the original
+const RISE=3.6,TURNS=2,PHI_MAX=TURNS*TAU,K=RISE/TAU,OPEN=.6,ENTRY=.3,SLAB=.35,PARA=1.05,PT=.2;
+const Rout=h=>7.6+.12*h, Rin=h=>4.6+.04*h, R_IN0=4.6, TOP_H=K*PHI_MAX, HTOP=TOP_H+RISE;
+const EYE=1.62,PR=.42;
+const ART_PHI=ART.map((_,i)=>.95+i*(PHI_MAX-.55-.95)/(N-1));
+const VIS=[ // coat: calico / grey tabby / tuxedo / ginger tabby
+ {name:'민지',color:0xd9644a,css:'#d9644a',fur:0xf3e3c6,earTip:0x3a3433,patch:[{c:0xe3974d,x:-.16,y:.17,z:.235,r:.13},{c:0x3a3433,x:.27,y:.1,z:.12,r:.1}],tip:0xe3974d,at:1},
+ {name:'Jae',color:0x4a7be0,css:'#4a7be0',fur:0x9aa1aa,mark:0x6c737c,muzzle:0xf3f1ee,at:3},
+ {name:'솔',color:0x3f9a74,css:'#3f9a74',fur:0x2b2b31,muzzle:0xf6f3ee,socks:true,eye:0xe3cf55,whisker:0xdedad3,tip:0xf6f3ee,at:5},
+ {name:'taeyang',color:0xc99a2e,css:'#c99a2e',fur:0xeb9446,mark:0xc56a22,muzzle:0xfbeedd,at:7}];
+const POOL=['위에서 내려다보니 램프가 소용돌이 같아요','램프 아래쪽부터 최근에 갱신된 저장소 순서로 걸려 있어요','저장소 카드를 누르면 GitHub로 가는 링크가 열려요','text2sql-agent는 읽기 전용으로만 SQL을 실행한다고 적혀 있네요','언어마다 색 점이 다르게 찍혀 있어요','설명이 비어 있는 저장소도 비어 있다고 그대로 적어 뒀네요','꼭대기 천창 아래가 제일 밝아요'];
+const polar=(phi,r)=>({x:r*Math.cos(phi),z:r*Math.sin(phi)});
+const faceOut=phi=>Math.atan2(Math.cos(phi),Math.sin(phi)); // body rotation that faces the outer wall
+
+/* ---------- renderer ---------- */
+const stage=$('stage');
+let renderer;
+try{renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});}catch(e){stage.innerHTML='<p class="nogl">이 브라우저에서는 3D 전시관을 표시할 수 없습니다. WebGL을 지원하는 최신 브라우저에서 열어 주세요.</p>';return;}
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,isCoarse()?1.75:2));
+const canvas=renderer.domElement; canvas.className='scene'; canvas.tabIndex=0; canvas.setAttribute('aria-label','3D 전시관');
+stage.appendChild(canvas);
+const maxAniso=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+const scene=new THREE.Scene();
+const BG=0xdedbd4; scene.background=new THREE.Color(BG); scene.fog=new THREE.Fog(BG,26,70);
+const camera=new THREE.PerspectiveCamera(62,1,.05,120); camera.rotation.order='YXZ';
+const camD=()=>camera.aspect<1?4.3:3.2, sho=()=>camera.aspect<1?.15:.35;
+scene.add(new THREE.HemisphereLight(0xffffff,0x9d968b,.74));
+scene.add(new THREE.AmbientLight(0xffffff,.24));
+const sun=new THREE.DirectionalLight(0xfff6ea,.32); sun.position.set(2,20,3); scene.add(sun);
+
+/* ---------- repository cards (artwork textures) ---------- */
+// Each exhibit is a canvas-drawn mock of its GitHub page: browser chrome with the real URL,
+// owner / repo heading, the repository description, the tech words written in that description,
+// and a language dot + last-updated date. No image or API is loaded at runtime.
+function grain(c,w,h,r,amt){const img=c.getImageData(0,0,w,h),d=img.data;for(let i=0;i<d.length;i+=4){const n=(r()-.5)*amt;d[i]+=n;d[i+1]+=n;d[i+2]+=n}c.putImageData(img,0,0)}
+const LANG_COLOR={Java:'#b07219',Python:'#3572A5',HTML:'#e34c26','C#':'#178600'};
+const C_BG='#ffffff',C_CHROME='#f6f8fa',C_LINE='#d0d7de',C_FG='#1f2328',C_DIM='#656d76',C_LINK='#0969da',C_CHIP='#ddf4ff',C_CHIPT='#0a5fa8';
+const F_SANS='"IBM Plex Sans KR","Apple SD Gothic Neo",sans-serif',F_MONO='"IBM Plex Mono",monospace';
+// greedy word wrap that falls back to breaking inside a long token (Korean has few spaces)
+function wrapWords(c,text,max,lines){const out=[];let cur='';
+ const flush=()=>{if(cur){out.push(cur);cur=''}};
+ for(const wd of text.split(' ')){
+  if(out.length>=lines)break;
+  const t=cur?cur+' '+wd:wd;
+  if(c.measureText(t).width<=max){cur=t;continue}
+  flush();if(out.length>=lines)break;
+  if(c.measureText(wd).width<=max){cur=wd;continue}
+  let s='';for(const ch of wd){if(c.measureText(s+ch).width>max){out.push(s);s=ch;if(out.length>=lines)break}else s+=ch}cur=s}
+ if(cur&&out.length<lines)out.push(cur);
+ return out}
+function pill(c,x,y,w,h,fill,stroke,lw){rr(c,x,y,w,h,h/2);if(fill){c.fillStyle=fill;c.fill()}if(stroke){c.strokeStyle=stroke;c.lineWidth=lw||1;c.stroke()}}
+function padlock(c,cx,cy,s,col){c.fillStyle=c.strokeStyle=col;c.lineWidth=s*.17;
+ c.beginPath();c.arc(cx,cy-s*.16,s*.29,Math.PI,0);c.stroke();rr(c,cx-s*.44,cy-s*.16,s*.88,s*.6,s*.12);c.fill()}
+function bookIcon(c,x,y,s,col){c.strokeStyle=col;c.lineWidth=s*.1;c.lineJoin='round';
+ c.strokeRect(x+s*.1,y+s*.05,s*.8,s*.9);c.beginPath();c.moveTo(x+s*.5,y+s*.16);c.lineTo(x+s*.5,y+s*.79);c.stroke()}
+function drawCard(c,W,H,a){
+ const u=W/1024,PX=44*u;
+ c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,W,H);
+ c.fillStyle=C_BG;c.fillRect(0,0,W,H);
+ // browser chrome with the repository URL
+ const ch=74*u;
+ c.fillStyle=C_CHROME;c.fillRect(0,0,W,ch);
+ c.fillStyle=C_LINE;c.fillRect(0,ch-1.5*u,W,1.5*u);
+ ['#dfe2e6','#d6d9de','#ccd1d6'].forEach((col,k)=>{c.fillStyle=col;c.beginPath();c.arc((34+30*k)*u,ch/2,8.5*u,0,TAU);c.fill()});
+ const ax=136*u,ah=40*u;
+ pill(c,ax,(ch-ah)/2,W-ax-40*u,ah,'#ffffff',C_LINE,1.4*u);
+ padlock(c,ax+24*u,ch/2,14*u,C_DIM);
+ c.textBaseline='middle';c.font='500 '+(23*u)+'px '+F_MONO;
+ const base='github.com/'+GH_USER+'/';
+ c.fillStyle=C_DIM;c.fillText(base,ax+48*u,ch/2);
+ c.fillStyle=C_FG;c.fillText(a.repo,ax+48*u+c.measureText(base).width,ch/2);
+ c.textBaseline='alphabetic';
+ // owner / repo
+ let y=ch+62*u;
+ bookIcon(c,PX,y-24*u,30*u,C_DIM);
+ const owner=GH_USER+' / ';let tx=PX+46*u;
+ c.fillStyle=C_DIM;c.font='400 '+(32*u)+'px '+F_MONO;c.fillText(owner,tx,y);
+ tx+=c.measureText(owner).width;
+ c.fillStyle=C_LINK;c.font='500 '+(32*u)+'px '+F_MONO;c.fillText(a.repo,tx,y);
+ y+=26*u;c.fillStyle=C_LINE;c.fillRect(PX,y,W-PX*2,1.5*u);
+ // description, or an honest note that there is none
+ y+=50*u;
+ if(a.desc){c.fillStyle=C_FG;c.font='400 '+(29*u)+'px '+F_SANS;
+  wrapWords(c,a.desc,W-PX*2,3).forEach((ln,k)=>c.fillText(ln,PX,y+k*40*u))}
+ else{c.fillStyle=C_DIM;c.font='400 '+(28*u)+'px '+F_SANS;c.fillText('설명이 등록되지 않은 저장소입니다.',PX,y)}
+ // tech words quoted from the description, drawn as chips
+ if(a.stack.length){c.font='500 '+(21*u)+'px '+F_SANS;
+  let cx=PX,cy=348*u;const chH=38*u,gap=10*u;
+  for(const s of a.stack){const tw=c.measureText(s).width,cw=tw+32*u;
+   if(cx+cw>W-PX){cx=PX;cy+=chH+gap;if(cy+chH>H-96*u)break}
+   pill(c,cx,cy,cw,chH,C_CHIP,null);
+   c.fillStyle=C_CHIPT;c.textBaseline='middle';c.fillText(s,cx+16*u,cy+chH/2);c.textBaseline='alphabetic';
+   cx+=cw+gap}}
+ // footer: language dot, last updated, visibility
+ const fy=H-52*u;
+ c.fillStyle=C_LINE;c.fillRect(PX,fy-30*u,W-PX*2,1.5*u);
+ c.textBaseline='middle';
+ let fx=PX;
+ if(a.lang){c.fillStyle=LANG_COLOR[a.lang]||C_DIM;c.beginPath();c.arc(fx+9*u,fy,9*u,0,TAU);c.fill();
+  c.fillStyle=C_FG;c.font='500 '+(25*u)+'px '+F_SANS;c.fillText(a.lang,fx+28*u,fy);fx+=28*u+c.measureText(a.lang).width}
+ else{c.fillStyle=C_DIM;c.font='400 '+(25*u)+'px '+F_SANS;c.fillText('언어 정보 없음',fx,fy);fx+=c.measureText('언어 정보 없음').width}
+ c.fillStyle=C_DIM;c.font='400 '+(25*u)+'px '+F_SANS;c.fillText('  ·  최근 갱신 '+a.updated,fx,fy);
+ const vis='Public';c.font='500 '+(21*u)+'px '+F_MONO;const vw=c.measureText(vis).width+32*u;
+ pill(c,W-PX-vw,fy-17*u,vw,34*u,null,C_LINE,1.4*u);
+ c.fillStyle=C_DIM;c.fillText(vis,W-PX-vw+16*u,fy);
+ c.textBaseline='alphabetic'}
+function makeCard(a,w,h){const cv=document.createElement('canvas');cv.width=w;cv.height=h;drawCard(cv.getContext('2d'),w,h,a);return cv}
+
+/* ---------- building ---------- */
+function concreteTex(base){const s=512,cv=document.createElement('canvas');cv.width=cv.height=s;const c=cv.getContext('2d',{willReadFrequently:true}),r=rng(7);
+ c.fillStyle=base;c.fillRect(0,0,s,s);
+ for(let i=0;i<2600;i++){const d=r()<.5;c.fillStyle=`rgba(${d?70:255},${d?64:250},${d?58:244},${r()*.06})`;c.beginPath();c.arc(r()*s,r()*s,r()*10,0,TAU);c.fill()}
+ c.strokeStyle='rgba(60,55,50,.16)';c.lineWidth=2;c.strokeRect(1,1,s-2,s-2);grain(c,s,s,r,10);
+ const t=new THREE.CanvasTexture(cv);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=maxAniso;return t}
+const V3=(phi,r,y)=>new THREE.Vector3(r*Math.cos(phi),y,r*Math.sin(phi));
+// a ribbon swept along phi between two edge curves
+function strip(p0,p1,fa,fb,mat,uLen){const segs=Math.max(2,Math.ceil((p1-p0)*22)),pos=[],uv=[],idx=[];
+ for(let i=0;i<=segs;i++){const phi=p0+(p1-p0)*i/segs,a=fa(phi),b=fb(phi),u=phi*(uLen||1);pos.push(a.x,a.y,a.z,b.x,b.y,b.z);uv.push(u,0,u,1);
+  if(i<segs){const k=i*2;idx.push(k,k+1,k+2,k+1,k+3,k+2)}}
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(idx);g.computeVertexNormals();
+ const m=new THREE.Mesh(g,mat);scene.add(m);return m}
+function quad(a,b,c,d,mat){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute([a,b,c,d].flatMap(v=>[v.x,v.y,v.z]),3));g.setIndex([0,1,2,0,2,3]);g.computeVertexNormals();
+ const m=new THREE.Mesh(g,mat);scene.add(m);return m}
+const DS=THREE.DoubleSide;
+const rampTex=concreteTex('#b3ada3');rampTex.repeat.set(1,1);
+const floorMat=new THREE.MeshLambertMaterial({map:rampTex,side:DS});
+const wallMat=new THREE.MeshLambertMaterial({color:0xf3f1ec,side:THREE.BackSide});
+const whiteMat=new THREE.MeshLambertMaterial({color:0xf6f4ef,side:DS});
+const slabMat=new THREE.MeshLambertMaterial({color:0xece9e3,side:DS});
+const glowMat=new THREE.MeshBasicMaterial({color:0xfffbf2,side:DS});
+const gapMat=new THREE.MeshBasicMaterial({color:0x9b958c,side:DS});
+const hA=phi=>K*phi;
+// ramp walking surface, its underside, and the solid white parapet band on the inner edge
+const rampTop=strip(0,PHI_MAX,p=>V3(p,Rin(hA(p)),hA(p)),p=>V3(p,Rout(hA(p)),hA(p)),floorMat,6/3);
+const rampBot=strip(0,PHI_MAX,p=>V3(p,Rin(hA(p)),hA(p)-SLAB),p=>V3(p,Rout(hA(p)),hA(p)-SLAB),slabMat);
+const paraVoid1=strip(OPEN,TAU,p=>V3(p,Rin(hA(p)),0),p=>V3(p,Rin(hA(p)),hA(p)+PARA),whiteMat);       // lobby wall under the first turn
+const paraVoid2=strip(TAU,PHI_MAX,p=>V3(p,Rin(hA(p)),hA(p)-SLAB),p=>V3(p,Rin(hA(p)),hA(p)+PARA),whiteMat);
+const paraIn=strip(OPEN,PHI_MAX,p=>V3(p,Rin(hA(p))+PT,hA(p)),p=>V3(p,Rin(hA(p))+PT,hA(p)+PARA),whiteMat);
+const paraTop=strip(OPEN,PHI_MAX,p=>V3(p,Rin(hA(p)),hA(p)+PARA),p=>V3(p,Rin(hA(p))+PT,hA(p)+PARA),whiteMat);
+strip(0,PHI_MAX,p=>V3(p,Rout(hA(p))-.64,hA(p)-SLAB-.006),p=>V3(p,Rout(hA(p))-.5,hA(p)-SLAB-.006),glowMat); // cove light under each turn
+strip(0,PHI_MAX,p=>V3(p,Rout(hA(p))-.015,hA(p)+.001),p=>V3(p,Rout(hA(p))-.015,hA(p)+.06),gapMat);       // shadow gap at the wall foot
+const hO=hA(OPEN);
+const capA=quad(V3(OPEN,Rin(hO),0),V3(OPEN,Rin(hO)+PT,0),V3(OPEN,Rin(hO)+PT,hO+PARA),V3(OPEN,Rin(hO),hO+PARA),whiteMat);
+const startWall=quad(V3(0,R_IN0-.02,0),V3(0,Rout(0),0),V3(0,Rout(0),hA(TAU)-SLAB),V3(0,R_IN0-.02,hA(TAU)-SLAB),whiteMat);
+const topWall=quad(V3(PHI_MAX,Rin(TOP_H),TOP_H-SLAB),V3(PHI_MAX,Rout(TOP_H),TOP_H-SLAB),V3(PHI_MAX,Rout(TOP_H),TOP_H+3.2),V3(PHI_MAX,Rin(TOP_H),TOP_H+3.2),whiteMat);
+const outerWall=new THREE.Mesh(new THREE.CylinderGeometry(Rout(HTOP),Rout(0),HTOP,128,1,true),wallMat);outerWall.position.y=HTOP/2;scene.add(outerWall);
+const lobbyTex=concreteTex('#aaa49a');lobbyTex.repeat.set(2.4,2.4);
+const lobby=new THREE.Mesh(new THREE.CircleGeometry(R_IN0+.05,96),new THREE.MeshLambertMaterial({map:lobbyTex}));lobby.rotation.x=-Math.PI/2;scene.add(lobby);
+// skylight
+const skyTex=(()=>{const s=1024,cv=document.createElement('canvas');cv.width=cv.height=s;const c=cv.getContext('2d'),m=s/2;
+ const g=c.createRadialGradient(m,m,0,m,m,m);g.addColorStop(0,'#ffffff');g.addColorStop(.7,'#eef3f7');g.addColorStop(1,'#cfd6dc');c.fillStyle=g;c.fillRect(0,0,s,s);
+ c.strokeStyle='rgba(120,128,136,.55)';c.lineWidth=7;for(let i=0;i<16;i++){const a=i/16*TAU;c.beginPath();c.moveTo(m+Math.cos(a)*40,m+Math.sin(a)*40);c.lineTo(m+Math.cos(a)*m,m+Math.sin(a)*m);c.stroke()}
+ c.lineWidth=5;[.18,.38,.58,.78,.97].forEach(f=>{c.beginPath();c.arc(m,m,m*f,0,TAU);c.stroke()});return new THREE.CanvasTexture(cv)})();
+const sky=new THREE.Mesh(new THREE.CircleGeometry(Rout(HTOP),96),new THREE.MeshBasicMaterial({map:skyTex}));sky.rotation.x=Math.PI/2;sky.position.y=HTOP;scene.add(sky);
+const solids=[rampTop,rampBot,paraVoid1,paraVoid2,paraIn,paraTop,capA,startWall,topWall,outerWall]; // camera stops in front of these
+
+/* ---------- artworks ---------- */
+const glowTex=(()=>{const cv=document.createElement('canvas');cv.width=cv.height=256;const c=cv.getContext('2d');const g=c.createRadialGradient(128,100,0,128,128,128);
+ g.addColorStop(0,'rgba(255,246,228,.8)');g.addColorStop(.6,'rgba(255,240,214,.28)');g.addColorStop(1,'rgba(255,240,214,0)');c.fillStyle=g;c.fillRect(0,0,256,256);return new THREE.CanvasTexture(cv)})();
+const FRAMES={oak:0x9a7350,black:0x1d1c1b,white:0xf7f6f2,none:0x2a2826};
+const fixMat=new THREE.MeshLambertMaterial({color:0x2a2a2c});
+const clickables=[],arts=[],plaques=[],cards=[];
+ART.forEach((a,i)=>{
+ const phi=ART_PHI[i],h=hA(phi),R=Rout(h+EYE-a.h/2),half=a.w/2+.5,r=R-(half*half/(2*R)+.03);
+ const c=Math.cos(phi),s=Math.sin(phi),n={x:-c,z:-s};
+ const g=new THREE.Group();g.position.set(r*c,h+EYE,r*s);g.rotation.y=Math.atan2(n.x,n.z);scene.add(g);
+ const fw=a.frame==='none'?0:.05,depth=a.frame==='none'?.04:.06;
+ const frame=new THREE.Mesh(new THREE.BoxGeometry(a.w+fw*2,a.h+fw*2,depth),new THREE.MeshLambertMaterial({color:FRAMES[a.frame]}));frame.position.z=depth/2;g.add(frame);
+ const L=1024,pw=Math.round(a.w>=a.h?L:L*a.w/a.h),ph=Math.round(a.h>=a.w?L:L*a.h/a.w);
+ const cardCv=makeCard(a,pw,ph);
+ const tex=new THREE.CanvasTexture(cardCv);tex.anisotropy=maxAniso;cards.push({cv:cardCv,tex,a});
+ const pic=new THREE.Mesh(new THREE.PlaneGeometry(a.w,a.h),new THREE.MeshBasicMaterial({map:tex,color:0xf0f0f0}));pic.position.z=depth+.002;g.add(pic);
+ const glow=new THREE.Mesh(new THREE.PlaneGeometry(a.w+1.6,a.h+1.6),new THREE.MeshBasicMaterial({map:glowTex,transparent:true,depthWrite:false}));glow.position.set(0,.2,-.02);g.add(glow);
+ const pc=document.createElement('canvas');pc.width=256;pc.height=160;const pt=new THREE.CanvasTexture(pc);pt.anisotropy=maxAniso;
+ const plaque=new THREE.Mesh(new THREE.PlaneGeometry(.2,.125),new THREE.MeshBasicMaterial({map:pt}));plaque.position.set(a.w/2+fw+.28,-.2,.01);g.add(plaque);
+ plaques.push({cv:pc,tex:pt});
+ frame.userData.i=pic.userData.i=plaque.userData.i=i;clickables.push(frame,pic,plaque);
+ arts.push({phi,h,n,x:r*c,z:r*s,data:a});
+ if(phi+TAU<PHI_MAX){const f=new THREE.Mesh(new THREE.CylinderGeometry(.06,.08,.22,12),fixMat),p=V3(phi,Rout(h)-1.5,hA(phi+TAU)-SLAB-.11);f.position.copy(p);scene.add(f)}
+});
+// exhibition title on the lobby wall, opposite the ramp entrance
+const titleCv=document.createElement('canvas');titleCv.width=1024;titleCv.height=512;const titleTex=new THREE.CanvasTexture(titleCv);titleTex.anisotropy=maxAniso;
+const titleMesh=new THREE.Mesh(new THREE.PlaneGeometry(3,1.5),new THREE.MeshBasicMaterial({map:titleTex,transparent:true}));
+{const R=Rin(hA(Math.PI)),r=R-(1.5*1.5/(2*R)+.04);titleMesh.position.set(-r,1.75,0);titleMesh.rotation.y=Math.PI/2;scene.add(titleMesh)}
+
+/* ---------- characters (visitors + me) ---------- */
+function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
+const GEO={},geo=(k,f)=>GEO[k]||(GEO[k]=f()),SPH=(r,w,h)=>geo('s'+r+'_'+(w||20),()=>new THREE.SphereGeometry(r,w||20,h||14));
+const pinkMat=new THREE.MeshLambertMaterial({color:0xf3a8b4}),noseMat=new THREE.MeshLambertMaterial({color:0xe07a8c}),beanMat=new THREE.MeshLambertMaterial({color:0xf2a0ae}),
+ shineMat=new THREE.MeshBasicMaterial({color:0xffffff}),pupilMat=new THREE.MeshBasicMaterial({color:0x1a1716}),mouthMat=new THREE.MeshBasicMaterial({color:0x5b3b3d}),
+ blushMat=new THREE.MeshBasicMaterial({color:0xff9aa8,transparent:true,opacity:.55,depthWrite:false}),
+ bellMat=new THREE.MeshLambertMaterial({color:0xf2c14e,emissive:0x3a2600}),slitMat=new THREE.MeshBasicMaterial({color:0x6b4a12});
+// a round chibi cat standing on two bean feet: big head, chubby cheeks, muzzle puffs, glossy eyes,
+// scarf + bell in the visitor's colour, toe beans, coat pattern and a fluffy tail
+function makeCharacter(v){
+ const g=new THREE.Group(),inner=new THREE.Group();g.add(inner);
+ const L=c=>new THREE.MeshLambertMaterial({color:c});
+ const fur=L(v.fur),light=L(v.muzzle||0xfbf8f2),scarf=L(v.color),mark=v.mark?L(v.mark):null,tip=v.tip?L(v.tip):null,whisk=new THREE.MeshBasicMaterial({color:v.whisker||0x8a847c});
+ const add=(gm,mat,x,y,z,parent,sx,sy,sz)=>{const m=new THREE.Mesh(gm,mat);m.position.set(x,y,z);if(sx)m.scale.set(sx,sy,sz);(parent||inner).add(m);return m};
+ const grp=(x,y,z,parent)=>{const p=new THREE.Group();p.position.set(x,y,z);(parent||inner).add(p);return p};
+ const paws=v.socks?light:fur;
+ // stubby legs with bean feet
+ const legs=[-1,1].map(s=>{const p=grp(s*.12,.3,0);add(geo('leg',()=>new THREE.CylinderGeometry(.075,.08,.2,14)),fur,0,-.1,0,p);add(SPH(.1),paws,0,-.22,.04,p,1,.72,1.3);return p});
+ // round body + belly
+ add(SPH(.3,26,20),fur,0,.52,0,null,1,1.08,.92);
+ add(SPH(.22),light,0,.48,.15,null,1,1.12,.55);
+ // arms with round paws and pink toe beans
+ const arms=[-1,1].map(s=>{const p=grp(s*.27,.69,0);p.rotation.z=s*.38;
+  add(geo('arm',()=>new THREE.CylinderGeometry(.06,.066,.18,12)),fur,0,-.09,0,p);
+  add(SPH(.08),paws,0,-.2,.01,p);add(SPH(.028,10,8),beanMat,0,-.215,.08,p,1,.8,.5);
+  [-1,0,1].forEach(k=>add(SPH(.013,8,6),beanMat,k*.026,-.168,.078,p));return p});
+ // scarf, bandana knot and bell
+ add(geo('scarf',()=>new THREE.TorusGeometry(.2,.056,12,32)),scarf,0,.84,0).rotation.x=Math.PI/2;
+ add(geo('knot',()=>new THREE.ConeGeometry(.12,.17,3)),scarf,0,.73,.2,null,1,1,.32).rotation.z=Math.PI;
+ add(SPH(.045,16,12),bellMat,0,.75,.275);add(SPH(.012,8,6),slitMat,0,.735,.318);
+ // head
+ const head=grp(0,1.06,0);
+ add(SPH(.34,32,24),fur,0,0,0,head,1.16,.94,1);
+ [-1,1].forEach(s=>add(SPH(.17),fur,s*.21,-.11,.08,head,1,.85,1));                 // chubby cheeks
+ [-1,1].forEach(s=>add(SPH(.078,16,12),light,s*.056,-.115,.285,head,1,.85,.85));    // muzzle puffs
+ add(SPH(.05),light,0,-.165,.265,head);                                               // chin
+ add(SPH(.036,12,10),noseMat,0,-.068,.33,head,1.45,.85,.9);                           // nose
+ [-1,1].forEach(s=>{const m=add(geo('mouth',()=>new THREE.TorusGeometry(.026,.0065,6,16,Math.PI)),mouthMat,s*.026,-.138,.352,head);m.rotation.z=Math.PI}); // ω mouth
+ const eyes=[-1,1].map(s=>{const e=grp(s*.135,0,.3,head);
+  if(v.eye){add(SPH(.068),L(v.eye),0,0,0,e,1,1.15,.55);add(SPH(.04),pupilMat,0,0,.022,e,.45,1.25,.5)}
+  else add(SPH(.068),pupilMat,0,0,0,e,1,1.15,.55);
+  add(SPH(.023,10,8),shineMat,.022,.03,.036,e);add(SPH(.011,8,6),shineMat,-.02,-.026,.036,e);return e});
+ [-1,1].forEach(s=>add(SPH(.055,12,10),blushMat,s*.22,-.085,.255,head,1,.55,.35));   // blush
+ [-1,1].forEach(s=>[-1,0,1].forEach(k=>{const w=add(geo('whisker',()=>new THREE.BoxGeometry(.2,.005,.005)),whisk,s*.23,-.1+k*.024,.25,head);w.rotation.set(0,-s*.3,s*k*.15)}));
+ if(mark)[-1,0,1].forEach(k=>{const m=add(SPH(.05,10,8),mark,k*.075,.2,.255,head,.32,1.3,.35);m.rotation.z=-k*.3});  // tabby forehead stripes
+ (v.patch||[]).forEach(p=>add(SPH(p.r,16,12),L(p.c),p.x,p.y,p.z,head,1,1,.45));
+ // ears: flattened cones with pink insides and rounded tips
+ const ears=[-1,1].map(s=>{const p=grp(s*.21,.24,-.02,head);p.rotation.z=-s*.42;const ec=v.earTip&&s>0?L(v.earTip):fur;
+  add(geo('ear',()=>new THREE.ConeGeometry(.13,.24,24)),ec,0,.1,0,p,1,1,.55);
+  add(geo('earIn',()=>new THREE.ConeGeometry(.08,.16,20)),pinkMat,0,.075,.04,p,1,1,.5);
+  add(SPH(.028,10,8),ec,0,.2,0,p,1,1,.6);return p});
+ // fluffy tail (ringed for tabbies, light tip if given)
+ const tail=[];let parent=grp(0,.4,-.25);
+ for(let i=0;i<14;i++){const p=new THREE.Group();p.position.y=i?.045:0;p.rotation.x=i?.12:-1.25;parent.add(p);
+  const m=tip&&i>=11?tip:(mark&&i%4===2?mark:fur);add(SPH(+(.072-i*.0022).toFixed(4),12,10),m,0,.03,0,p);parent=p;tail.push(p)}
+ const sh=new THREE.Mesh(new THREE.CircleGeometry(.32,24),new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.16,depthWrite:false}));sh.rotation.x=-Math.PI/2;sh.position.y=.012;g.add(sh);
+ const cv=document.createElement('canvas');cv.width=512;cv.height=200;const tex=new THREE.CanvasTexture(cv);
+ const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthWrite:false}));sprite.scale.set(2,.78,1);sprite.position.y=2.06;inner.add(sprite);
+ scene.add(g);
+ return {v,g,inner,legs,arms,tail,head,eyes,ears,cv,tex,walkT:0,tailT:Math.random()*6,blink:1+Math.random()*3,twitch:2+Math.random()*4,twT:0,twEar:0,jy:0,vy:0,land:0,sayUntil:0};
+}
+// light, bouncy trot: quick short steps, a little hop and squash on every step, body leaning forward
+const WALK=4.2,STEP=12.5,GRAV=18,JUMP_V=5;
+function stepJump(o,dt){if(o.jy>0||o.vy>0){o.vy-=GRAV*dt;o.jy+=o.vy*dt;if(o.jy<=0){o.jy=0;o.vy=0;o.land=.2}}return o.jy>0}
+function animateWalk(o,dt,moving,air){const walk=moving&&!air;if(walk)o.walkT+=dt;const s=walk?Math.sin(o.walkT*STEP)*.5:0,k=Math.min(1,dt*16);
+ o.tailT+=dt*(moving||air?1.8:1);o.tail.forEach((p,i)=>{p.rotation.z=Math.sin(o.tailT*2.4-i*.32)*(moving||air?.18:.1)});
+ o.head.rotation.z=walk?Math.sin(o.walkT*STEP)*.06:Math.sin(o.tailT*.9)*.06;
+ let sx=1,sy=1;
+ if(air){const st=o.vy>0?.09:.03;sx=1-st*.5;sy=1+st}                                   // stretch in the air
+ else if(o.land>0){o.land-=dt;const q=Math.max(0,o.land)/.2*.16;sx=1+q*.6;sy=1-q}         // squash on landing
+ else if(walk){const sq=Math.abs(Math.sin(o.walkT*STEP))*.05;sx=1+sq*.6;sy=1-sq}
+ o.inner.scale.set(sx,sy,sx);
+ o.blink-=dt;if(o.blink<0)o.blink=2.2+Math.random()*3.5;const lid=o.blink<.13?.12:1;o.eyes.forEach(e=>{e.scale.y=lid}); // blink
+ o.twitch-=dt;if(o.twitch<0){o.twitch=3+Math.random()*5;o.twEar=Math.random()<.5?0:1;o.twT=.3}                     // ear twitch
+ o.twT=Math.max(0,o.twT-dt);o.ears.forEach((e,i)=>{e.rotation.x=i===o.twEar&&o.twT>0?Math.sin(o.twT*42)*.28:0});
+ const lt=air?[.5,.3]:[s,-s],at=air?[-2.5,-2.5]:[-s*.8,s*.8];                                   // paws up while airborne
+ o.legs.forEach((l,i)=>{l.rotation.x+=(lt[i]-l.rotation.x)*k});o.arms.forEach((a,i)=>{a.rotation.x+=(at[i]-a.rotation.x)*k});
+ o.inner.position.y=walk?Math.abs(Math.cos(o.walkT*STEP))*.075:o.inner.position.y*.8;
+ o.inner.rotation.x+=((walk?.1:0)-o.inner.rotation.x)*k}
+function placeVisitor(o){const p=polar(o.phi,o.r);o.g.position.set(p.x,hA(o.phi)+(o.jy||0),p.z)}
+const avatars=VIS.map((v,k)=>{const o=makeCharacter(v),A=arts[v.at];
+ Object.assign(o,{phi:A.phi+.06,r:Rout(A.h)-2.1,at:v.at,tphi:null,tr:0,wait:2+k*2.5,face:faceOut(A.phi)});placeVisitor(o);o.g.rotation.y=o.face;return o});
+const me=makeCharacter({name:'나',color:0x2d45c4,css:'#6f86ff',fur:0xf8f5ef,muzzle:0xffffff,tip:0xd8d2c8});
+function wrap(c,text,max,lines){const out=[];let cur='';for(const ch of text){if(c.measureText(cur+ch).width>max){out.push(cur);cur=ch;if(out.length===lines)break}else cur+=ch}
+ if(out.length<lines&&cur)out.push(cur);else if(out.length===lines&&cur){out[lines-1]=out[lines-1].slice(0,-1)+'…'}return out}
+function drawName(a,msg){const c=a.cv.getContext('2d');c.clearRect(0,0,512,200);
+ c.font='600 30px "IBM Plex Sans KR", "Apple SD Gothic Neo", sans-serif';const tw=c.measureText(a.v.name).width,pw=tw+56,px=256-pw/2,py=150;
+ rr(c,px,py,pw,44,22);c.fillStyle='rgba(22,23,28,.8)';c.fill();c.fillStyle=a.v.css;c.beginPath();c.arc(px+23,py+22,7,0,TAU);c.fill();c.fillStyle='#fff';c.fillText(a.v.name,px+38,py+32);
+ if(msg){c.font='500 27px "IBM Plex Sans KR", "Apple SD Gothic Neo", sans-serif';const ls=wrap(c,msg,420,2),bw=Math.max(...ls.map(l=>c.measureText(l).width))+36,bh=ls.length*36+20,bx=256-bw/2,by=136-bh;
+  rr(c,bx,by,bw,bh,16);c.fillStyle='rgba(255,255,255,.97)';c.fill();c.beginPath();c.moveTo(244,136);c.lineTo(256,148);c.lineTo(268,136);c.fill();
+  c.fillStyle='#1c1d21';ls.forEach((l,i)=>c.fillText(l,bx+18,by+38+i*36))}
+ a.tex.needsUpdate=true}
+function say(a,text){a.sayUntil=performance.now()+6000;drawName(a,text);if(a!==me&&a.jy===0&&a.vy===0)a.vy=3.4} // visitors hop when they talk
+
+/* ---------- text textures (redrawn once web fonts arrive) ---------- */
+function drawTexts(){
+ cards.forEach(k=>{drawCard(k.cv.getContext('2d'),k.cv.width,k.cv.height,k.a);k.tex.needsUpdate=true});
+ plaques.forEach((p,i)=>{const c=p.cv.getContext('2d'),a=ART[i];c.fillStyle='#fbfaf7';c.fillRect(0,0,256,160);
+  c.fillStyle='#2d45c4';c.font='500 18px "IBM Plex Mono", monospace';c.fillText(String(i+1).padStart(2,'0'),18,34);
+  c.fillStyle='#1c1d21';c.font='500 19px "IBM Plex Mono", monospace';c.fillText(a.repo,18,70,220);
+  c.fillStyle='#45464d';c.font='500 16px "IBM Plex Sans KR", sans-serif';c.fillText(a.artist+' · '+(a.lang||'언어 정보 없음'),18,102,220);
+  c.font='400 14px "IBM Plex Sans KR", sans-serif';c.fillText('최근 갱신 '+a.updated,18,130,220);p.tex.needsUpdate=true});
+ const c=titleCv.getContext('2d');c.clearRect(0,0,1024,512);c.fillStyle='#1c1d21';
+ c.font='800 148px "Nanum Myeongjo", serif';c.fillText('금경희',40,180,940);
+ c.font='800 92px "Nanum Myeongjo", serif';c.fillText('포트폴리오 개인전',44,290,940);
+ c.fillStyle='#45464d';c.font='500 44px "IBM Plex Sans KR", sans-serif';c.fillText('Portfolio Solo Exhibition',48,362,940);
+ c.fillStyle='#55565c';c.font='400 30px "IBM Plex Mono", "IBM Plex Sans KR", monospace';c.fillText('github.com/'+GH_USER+'  ·  공개 저장소 '+N+'점  ·  상시',50,424,940);
+ titleTex.needsUpdate=true;
+ avatars.concat(me).forEach(a=>{if(performance.now()>a.sayUntil)drawName(a)});
+}
+drawTexts();
+if(document.fonts&&document.fonts.load){const all=ART.map(a=>a.repo+(a.lang||'')+a.note+a.stack.join('')).join('')+
+ '금경희 포트폴리오 개인전 Portfolio Solo Exhibition github.com/'+GH_USER+' 공개 저장소 점 상시 나선 램프관 최근 갱신 언어 정보 없음 설명이 등록되지 않은 저장소입니다 Public 나'+VIS.map(v=>v.name).join('')+POOL.join('');
+ Promise.all([document.fonts.load('800 40px "Nanum Myeongjo"',all),document.fonts.load('500 40px "IBM Plex Sans KR"',all),document.fonts.load('600 40px "IBM Plex Sans KR"',all),document.fonts.load('400 40px "IBM Plex Sans KR"',all),document.fonts.load('400 30px "IBM Plex Mono"',all+'0123456789.—·'),document.fonts.load('500 30px "IBM Plex Mono"',all+'0123456789.—·')]).then(drawTexts,drawTexts)}
+
+/* ---------- movement: lobby (flat disc) or ramp (phi, r) ---------- */
+// yaw/pitch = where the camera looks; face = which way my character's body points
+const player={state:'lobby',x:2,z:-.4,y:0,phi:0,r:0,yaw:Math.PI/2,pitch:.14};
+player.face=player.faceT=Math.atan2(-Math.sin(player.yaw),-Math.cos(player.yaw));
+const keys={},joyV={x:0,y:0};
+let glide=null,focus=null,curIdx=-1,firstPerson=false;
+const cam={x:0,y:0,z:0,yaw:0,p:0,init:false};
+const inEntry=th=>th>.12&&th<OPEN-.08;
+const norm=a=>((a%TAU)+TAU)%TAU;
+function syncRamp(){const p=polar(player.phi,player.r);player.x=p.x;player.z=p.z;player.y=hA(player.phi)}
+function moveBy(dx,dz){
+ const nx=player.x+dx,nz=player.z+dz,r=Math.hypot(nx,nz);
+ if(player.state==='lobby'){
+  if(r>R_IN0-PR&&!(inEntry(norm(Math.atan2(nz,nx))))){const s=(R_IN0-PR)/r;player.x=nx*s;player.z=nz*s;return}
+  if(r>R_IN0){player.state='ramp';player.phi=norm(Math.atan2(nz,nx));player.r=r;syncRamp();return}
+  player.x=nx;player.z=nz;player.y=0;return}
+ // on the ramp, split the step into along-the-ramp and across-the-ramp parts so "forward" follows the curve
+ const c0=Math.cos(player.phi),s0=Math.sin(player.phi);
+ let phi=clamp(player.phi+(dz*c0-dx*s0)/player.r,.12,PHI_MAX-.3);const h=hA(phi);let rr=Math.min(player.r+dx*c0+dz*s0,Rout(h)-PR);
+ if(phi<OPEN){if(rr<R_IN0){phi=clamp(phi,.13,OPEN-.09);const p=polar(phi,rr);player.state='lobby';player.x=p.x;player.z=p.z;player.y=0;return}}
+ else rr=Math.max(rr,Rin(h)+PT+PR);
+ player.phi=phi;player.r=rr;syncRamp()}
+// guided walks follow the ramp (interpolating phi), stepping through the entrance when moving between lobby and ramp
+const toXZ=p=>p.m==='g'?p:polar(p.phi,p.r);
+function curPt(){return player.state==='ramp'?{m:'r',phi:player.phi,r:player.r}:{m:'g',x:player.x,z:player.z}}
+function segLen(a,b){if(a.m==='r'&&b.m==='r'){const rm=(a.r+b.r)/2;return Math.hypot((b.phi-a.phi)*rm,b.r-a.r)}const pa=toXZ(a),pb=toXZ(b);return Math.hypot(pb.x-pa.x,pb.z-pa.z)}
+function applyPt(a,b,u){
+ if(a.m==='r'&&b.m==='r'){player.state='ramp';player.phi=a.phi+(b.phi-a.phi)*u;player.r=a.r+(b.r-a.r)*u;syncRamp();return}
+ const pa=toXZ(a),pb=toXZ(b),x=pa.x+(pb.x-pa.x)*u,z=pa.z+(pb.z-pa.z)*u,r=Math.hypot(x,z);
+ if(r>R_IN0){player.state='ramp';player.phi=norm(Math.atan2(z,x));player.r=r;syncRamp()}else{player.state='lobby';player.x=x;player.z=z;player.y=0}}
+function glideTo(target,tyaw,tpitch){const a=curPt(),pts=[a],eG={m:'g',...polar(ENTRY,R_IN0-.8)},eR={m:'r',phi:ENTRY,r:R_IN0+1};
+ if(a.m==='g'&&target.m==='r')pts.push(eG,eR);else if(a.m==='r'&&target.m==='g')pts.push(eR,eG);pts.push(target);
+ const segs=[];let total=0;for(let i=1;i<pts.length;i++){const l=segLen(pts[i-1],pts[i]);segs.push(l);total+=l}
+ glide={pts,segs,total,t:0,dur:reduce?.001:clamp(.8+total/7,.9,4.5),y0:player.yaw,dy:angDiff(tyaw,player.yaw),p0:player.pitch,p1:tpitch}}
+function stepGlide(dt){const g=glide;g.t+=dt;const k=Math.min(1,g.t/g.dur),e=k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;let d=e*g.total,i=0;
+ while(i<g.segs.length-1&&d>g.segs[i]){d-=g.segs[i];i++}applyPt(g.pts[i],g.pts[i+1],g.segs[i]?Math.min(1,d/g.segs[i]):1);
+ player.yaw=g.y0+g.dy*e;player.pitch=g.p0+(g.p1-g.p0)*e;
+ if(k>=1){glide=null;if(focus){focus.ready=true;player.faceT=focus.face}}}
+// the part of the screen not covered by the header / wall label; the 3D view is re-centred into it
+function visibleRect(){const w=innerWidth,h=innerHeight;if(label.hidden)return{x0:0,y0:0,x1:w,y1:h};
+ const L=label.getBoundingClientRect(),hall=document.querySelector('.hall'),hb=hall.offsetParent?hall.getBoundingClientRect().bottom+8:0;
+ if(L.left<w*.25)return{x0:0,y0:hb,x1:w,y1:L.top-8}; // bottom sheet
+ return{x0:0,y0:0,x1:L.left-8,y1:h}}                   // side panel
+// where to stand to look at artwork i; in 3rd person the camera floats out over the atrium to frame it
+function focusPose(i){const A=arts[i],a=A.data,v=visibleRect(),fx=(v.x1-v.x0)/innerWidth,fy=(v.y1-v.y0)/innerHeight;
+ const tv=Math.tan(camera.fov*Math.PI/360),th=tv*camera.aspect,c=Math.cos(A.phi),s=Math.sin(A.phi),yaw=Math.atan2(-c,-s);
+ const fit=Math.max((a.h/2+.4)/(tv*fy),(a.w/2+.4)/(th*fx)),Ro=Rout(A.h);
+ if(firstPerson)return{target:{m:'r',phi:A.phi,r:clamp(Ro-fit,Rin(A.h)+PT+PR,Ro-1.2)},yaw,pitch:0};
+ const rs=Ro-1.3,phiS=A.phi-(a.w/2+.15)/rs,sp=polar(phiS,rs),d=clamp(fit+.6,2.9,Ro-1),cp=polar(A.phi,Ro-d);
+ return{target:{m:'r',phi:phiS,r:rs},yaw,pitch:-.03,cam:{x:cp.x,y:A.h+EYE+.06,z:cp.z},face:Math.atan2(A.x-sp.x,A.z-sp.z)}}
+const shift={x:0,y:0};
+function updateViewShift(dt){const v=visibleRect(),w=innerWidth,h=innerHeight;
+ const tx=Math.max(0,w/2-(v.x0+v.x1)/2),ty=Math.max(0,h/2-(v.y0+v.y1)/2),k=reduce?1:Math.min(1,dt*6);
+ const nx=shift.x+(tx-shift.x)*k,ny=shift.y+(ty-shift.y)*k;
+ if(Math.abs(nx-shift.x)<.05&&Math.abs(ny-shift.y)<.05&&Math.abs(tx-nx)<.5&&Math.abs(ty-ny)<.5)return;
+ shift.x=Math.abs(tx-nx)<.5?tx:nx;shift.y=Math.abs(ty-ny)<.5?ty:ny;
+ if(shift.x<.5&&shift.y<.5)camera.clearViewOffset();else camera.setViewOffset(w,h,shift.x,shift.y,w,h);camera.updateProjectionMatrix()}
+const camRay=new THREE.Raycaster(),rayO=new THREE.Vector3(),rayD=new THREE.Vector3();
+function updateCamera(dt){
+ if(firstPerson){camera.position.set(player.x,player.y+me.jy+EYE,player.z);camera.rotation.set(player.pitch,player.yaw,0);cam.init=false;return}
+ let tx,ty,tz,tyaw,tp,rate=12;
+ if(focus&&focus.ready){tx=focus.cam.x;ty=focus.cam.y;tz=focus.cam.z;tyaw=focus.yaw;tp=focus.pitch;rate=4}
+ else{const cp=Math.cos(player.pitch),fx=-Math.sin(player.yaw)*cp,fy=Math.sin(player.pitch),fz=-Math.cos(player.yaw)*cp,S=sho(),CD=camD();
+  rayO.set(player.x+Math.cos(player.yaw)*S,player.y+1.5+me.jy*.6,player.z-Math.sin(player.yaw)*S);rayD.set(-fx,-fy,-fz);
+  camRay.set(rayO,rayD);camRay.far=CD+.3;const hit=camRay.intersectObjects(solids,false)[0];const d=hit?Math.max(.25,hit.distance-.3):CD;
+  tx=rayO.x-fx*d;ty=Math.max(player.y+.25,rayO.y-fy*d);tz=rayO.z-fz*d;tyaw=player.yaw;tp=player.pitch}
+ const k=cam.init?1-Math.exp(-dt*rate):1;cam.init=true;
+ cam.x+=(tx-cam.x)*k;cam.y+=(ty-cam.y)*k;cam.z+=(tz-cam.z)*k;cam.yaw+=angDiff(tyaw,cam.yaw)*k;cam.p+=(tp-cam.p)*k;
+ cam.y=clamp(cam.y,.3,HTOP-.3);const cr=Math.hypot(cam.x,cam.z),mr=Rout(cam.y)-.15;if(cr>mr){cam.x*=mr/cr;cam.z*=mr/cr}
+ camera.position.set(cam.x,cam.y,cam.z);camera.rotation.set(cam.p,cam.yaw,0)}
+
+/* ---------- UI ---------- */
+const label=$('label'),chat=$('chat'),hint=$('hint'),liked=new Array(N).fill(false);
+const pad=n=>String(n).padStart(2,'0');
+const turnOf=phi=>Math.floor(phi/TAU)+1;
+function updateSheet(){document.body.classList.toggle('sheet',!label.hidden||chat.classList.contains('open'))}
+function showLabel(i){const a=ART[i],A=arts[i];$('lNo').textContent='No. '+pad(i+1);$('lTitle').textContent=a.repo;$('lArtist').textContent=a.artist;$('lBorn').textContent='@'+GH_USER;
+ $('lLang').textContent=a.lang||'등록되지 않음';$('lDot').style.background=a.lang?(LANG_COLOR[a.lang]||'var(--muted)'):'var(--muted)';
+ $('lUpdated').textContent=a.updated;
+ const rp=$('lRepo');rp.textContent='github.com/'+a.path;rp.href=a.url;
+ const lk=$('lLink');lk.href=a.url;lk.title=a.url;
+ $('lWhere').textContent=`램프 ${turnOf(A.phi)}바퀴째 · 높이 ${A.h.toFixed(1)} m`;$('lNote').textContent=a.note;renderLike();
+ label.hidden=false;label.scrollTop=0;if(isSmall()||isCoarse())setChat(false);updateSheet()}
+function hideLabel(){label.hidden=true;updateSheet()}
+function renderLike(){const i=curIdx;if(i<0)return;$('like').setAttribute('aria-pressed',liked[i]);$('likeN').textContent=ART[i].likes+(liked[i]?1:0)}
+function updateTour(){$('idx').textContent=(curIdx<0?'—':pad(curIdx+1))+' / '+N;$('nowTitle').textContent=curIdx<0?'가이드 투어':ART[curIdx].title}
+function focusArt(i){curIdx=(i%N+N)%N;showLabel(curIdx);const f=focusPose(curIdx);
+ focus=firstPerson?null:{cam:f.cam,yaw:f.yaw,pitch:f.pitch,face:f.face,ready:false};
+ glideTo(f.target,f.yaw,firstPerson?f.pitch:-.2);updateTour();dismissHint()}
+function setChat(open){chat.classList.toggle('open',open);$('chatToggle').setAttribute('aria-expanded',open);if(open&&(isSmall()||isCoarse()))label.hidden=true;updateSheet()}
+function setView(fp){if(focus&&focus.ready)player.yaw=cam.yaw;
+ firstPerson=fp;const b=$('viewToggle');b.setAttribute('aria-pressed',fp);b.title=fp?'3인칭 시점으로 보기 (V)':'1인칭 시점으로 보기 (V)';
+ me.g.visible=!fp;cam.init=false;player.pitch=fp?0:-.2;if(!fp)player.face=player.faceT=Math.atan2(-Math.sin(player.yaw),-Math.cos(player.yaw));
+ if(!label.hidden&&curIdx>=0)focusArt(curIdx);else{focus=null;glide=null}}
+let hintGone=false;function dismissHint(){if(hintGone)return;hintGone=true;hint.classList.add('fade');setTimeout(()=>{hint.hidden=true},500)}
+function stopAuto(){glide=null;focus=null}
+
+$('next').onclick=()=>focusArt(curIdx+1);
+$('prev').onclick=()=>focusArt(curIdx<0?N-1:curIdx-1);
+$('now').onclick=()=>curIdx<0?focusArt(0):focusArt(curIdx);
+$('lNext').onclick=()=>focusArt(curIdx+1);
+$('lClose').onclick=hideLabel;
+$('like').onclick=()=>{liked[curIdx]=!liked[curIdx];renderLike()};
+$('chatToggle').onclick=()=>setChat(!chat.classList.contains('open'));
+$('viewToggle').onclick=()=>setView(!firstPerson);
+
+const faces=$('faces');
+[...VIS.map(v=>({t:v.name[0].toUpperCase(),c:v.css})),{t:'나',c:'#2d45c4'}].forEach(f=>{const s=document.createElement('span');s.textContent=f.t;s.style.background=f.c;faces.append(s)});
+
+const msgs=$('msgs');
+function addMsg(name,text,color,mine){const li=document.createElement('li');if(mine)li.className='me';const b=document.createElement('b');b.textContent=name;if(color)b.style.color=color;
+ li.append(b,document.createTextNode(text));msgs.append(li);while(msgs.children.length>40)msgs.firstChild.remove();msgs.scrollTop=msgs.scrollHeight}
+addMsg('민지','포트폴리오를 전시장처럼 걸어 둔 건 처음 봐요',VIS[0].css);
+addMsg('Jae','램프 따라 올라가면서 보니까 동선이 자연스럽네요',VIS[1].css);
+addMsg('솔','swat-acs-helper는 tkinter로 만들었다고 적혀 있어요',VIS[2].css);
+$('chatForm').addEventListener('submit',e=>{e.preventDefault();const inp=$('chatInput'),t=inp.value.trim();if(!t)return;addMsg('나',t,null,true);say(me,t);inp.value='';
+ if(Math.random()<.6)setTimeout(()=>{const a=avatars[Math.random()*avatars.length|0],r=['반가워요!','저도 그렇게 생각해요','어느 작품 보고 계세요?','좋은 관람 되세요'][Math.random()*4|0];addMsg(a.v.name,r,a.v.css);say(a,r)},1800+Math.random()*2000)});
+let poolI=0;
+(function loop(){setTimeout(()=>{const a=avatars[Math.random()*avatars.length|0],t=POOL[poolI++%POOL.length];addMsg(a.v.name,t,a.v.css);say(a,t);loop()},9000+Math.random()*8000)})();
+setTimeout(()=>say(avatars[0],'안녕하세요! 위에서 손 흔들고 있어요'),2500);
+
+/* ---------- input ---------- */
+const ray=new THREE.Raycaster(),ndc=new THREE.Vector2();
+function pick(e){const r=canvas.getBoundingClientRect();ndc.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(ndc,camera);
+ const hit=ray.intersectObjects(clickables.concat(solids),false)[0];return hit&&hit.distance<22&&hit.object.userData.i!=null?hit.object.userData.i:-1}
+// mouse: drag to look around, click to open an artwork (unchanged)
+let drag=null;
+function lookBy(dx,dy,k){
+ if(focus&&focus.ready){player.yaw=cam.yaw;player.pitch=-.2}
+ stopAuto();player.yaw-=dx*k;player.pitch=clamp(player.pitch-dy*k,firstPerson?-.8:-.95,firstPerson?.9:.45);dismissHint()}
+// touch/pen: the whole canvas is an invisible joystick (drag = walk, tap = jump, two fingers = look around)
+const TAP_PX=10,TAP_MS=500,DEAD_PX=12,SPAN_PX=60,ROT_K=.005,ROT_DEAD=8;
+const fingers=new Map();           // live touch pointers: id -> {x0,y0,x,y,t0,maxD,walk,spent}
+let rot=null;                 // two-finger look state: origin + last midpoint
+function clearWalk(){joyV.x=joyV.y=0}
+function resetTouch(){fingers.clear();rot=null;clearWalk()}
+function midOf(){let mx=0,my=0;fingers.forEach(q=>{mx+=q.x;my+=q.y});return{x:mx/fingers.size,y:my/fingers.size}}
+// a finger that took part in a 2+ finger gesture never walks or taps again (it has to be lifted first)
+function spendAll(){fingers.forEach(q=>{q.spent=true;q.walk=false});clearWalk()}
+function syncTouchMode(){
+ if(fingers.size===2){const m=midOf();spendAll();rot={ox:m.x,oy:m.y,x:m.x,y:m.y,on:false}}
+ else{rot=null;if(fingers.size>2)spendAll()}}        // 3 fingers or more: ignore
+canvas.addEventListener('pointerdown',e=>{
+ if(e.pointerType==='mouse'){if(drag)return;drag={id:e.pointerId,x:e.clientX,y:e.clientY,moved:0};canvas.setPointerCapture(e.pointerId);canvas.classList.add('dragging');return}
+ // touch pointers are implicitly captured by the canvas, so no setPointerCapture (two captures behave differently per device)
+ fingers.set(e.pointerId,{x0:e.clientX,y0:e.clientY,x:e.clientX,y:e.clientY,t0:performance.now(),maxD:0,walk:false,spent:false});
+ syncTouchMode()});
+canvas.addEventListener('pointermove',e=>{
+ if(e.pointerType==='mouse'){
+  if(drag&&e.pointerId===drag.id){const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.x=e.clientX;drag.y=e.clientY;drag.moved+=Math.abs(dx)+Math.abs(dy);
+   if(drag.moved>6)lookBy(dx,dy,.0042)}
+  else if(!drag)canvas.classList.toggle('hot',pick(e)>=0);
+  return}
+ const q=fingers.get(e.pointerId);if(!q)return;
+ q.x=e.clientX;q.y=e.clientY;q.maxD=Math.max(q.maxD,Math.hypot(q.x-q.x0,q.y-q.y0));
+ if(rot&&fingers.size===2){const m=midOf();
+  if(!rot.on&&Math.hypot(m.x-rot.ox,m.y-rot.oy)>ROT_DEAD)rot.on=true;
+  if(rot.on)lookBy(m.x-rot.x,m.y-rot.y,ROT_K);
+  rot.x=m.x;rot.y=m.y;return}
+ if(fingers.size!==1||q.spent)return;
+ const dx=q.x-q.x0,dy=q.y-q.y0,d=Math.hypot(dx,dy);
+ if(!q.walk){if(q.maxD<=DEAD_PX)return;q.walk=true;stopAuto();dismissHint()}
+ const m=clamp((d-DEAD_PX)/SPAN_PX,0,1);                 // 12px -> 0, 72px -> full speed
+ joyV.x=d>0?dx/d*m:0;joyV.y=d>0?dy/d*m:0});
+function endDrag(e,click){if(!drag||e.pointerId!==drag.id)return;
+ if(click&&drag.moved<=6){const i=pick(e);if(i>=0)focusArt(i);else if(isSmall()||isCoarse()){hideLabel();setChat(false)}}
+ drag=null;canvas.classList.remove('dragging')}
+function endTouch(e,lift){
+ const q=fingers.get(e.pointerId);if(!q)return;
+ fingers.delete(e.pointerId);clearWalk();syncTouchMode();
+ if(!(lift&&!q.spent&&!q.walk&&fingers.size===0&&q.maxD<=TAP_PX&&performance.now()-q.t0<=TAP_MS))return;
+ const i=pick(e);                                        // tap: artwork first, then close an open panel, then jump
+ if(i>=0)focusArt(i);
+ else if(!label.hidden||chat.classList.contains('open')){hideLabel();setChat(false)}
+ else jump()}
+canvas.addEventListener('pointerup',e=>{e.pointerType==='mouse'?endDrag(e,true):endTouch(e,true)});
+canvas.addEventListener('pointercancel',e=>{e.pointerType==='mouse'?endDrag(e,false):endTouch(e,false)});
+canvas.addEventListener('lostpointercapture',e=>{e.pointerType==='mouse'?endDrag(e,false):endTouch(e,false)});
+canvas.addEventListener('contextmenu',e=>e.preventDefault());
+
+function jump(){if(me.jy===0&&me.vy===0){me.vy=JUMP_V;dismissHint()}}
+const MOVE_KEYS=['KeyW','KeyA','KeyS','KeyD','KeyQ','KeyE','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','ShiftLeft','ShiftRight'];
+addEventListener('keydown',e=>{if(e.target.closest&&e.target.closest('input,textarea'))return;
+ if(e.code==='Escape'){hideLabel();return}
+ if(e.code==='KeyV'&&!e.repeat){setView(!firstPerson);return}
+ if(e.code==='Space'){e.preventDefault();const ae=document.activeElement;if(ae&&ae.tagName==='BUTTON')ae.blur();if(!e.repeat)jump();return}
+ if(MOVE_KEYS.includes(e.code)){keys[e.code]=true;if(e.code.startsWith('Arrow'))e.preventDefault()}});
+addEventListener('keyup',e=>{keys[e.code]=false});
+addEventListener('blur',()=>{for(const k in keys)keys[k]=false;resetTouch()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){for(const k in keys)keys[k]=false;resetTouch()}});
+
+/* ---------- floor plan (top view of the drum) ---------- */
+const mapC=$('map'),mctx=mapC.getContext('2d');let mapW=0,mapH=0;const cols={};
+function readCols(){const cs=getComputedStyle(document.documentElement);['--fg','--muted','--accent','--line'].forEach(k=>cols[k]=cs.getPropertyValue(k).trim())}
+function sizeMap(){const r=mapC.getBoundingClientRect();if(!r.width)return;const d=Math.min(window.devicePixelRatio||1,2);mapC.width=r.width*d;mapC.height=r.height*d;mctx.setTransform(d,0,0,d,0,0);mapW=r.width;mapH=r.height}
+function drawMap(){if(mapC.offsetParent===null)return;if(!mapW)sizeMap();if(!mapW)return;
+ const s=(Math.min(mapW,mapH)-10)/(2*Rout(HTOP)),cx=mapW/2,cz=mapH/2,X=x=>cx+x*s,Z=z=>cz+z*s,lv=player.y;
+ mctx.clearRect(0,0,mapW,mapH);
+ mctx.fillStyle=cols['--line'];mctx.beginPath();mctx.arc(cx,cz,Rout(lv)*s,0,TAU);mctx.arc(cx,cz,Rin(lv)*s,0,TAU,true);mctx.fill();
+ mctx.strokeStyle=cols['--muted'];mctx.lineWidth=1.5;mctx.beginPath();mctx.arc(cx,cz,Rout(lv)*s,0,TAU);mctx.stroke();
+ mctx.lineWidth=1;mctx.beginPath();mctx.arc(cx,cz,Rin(lv)*s,0,TAU);mctx.stroke();
+ mctx.strokeStyle=cols['--accent'];mctx.lineWidth=2.5;mctx.beginPath();mctx.arc(cx,cz,(R_IN0+1.4)*s,.05,OPEN-.05);mctx.stroke(); // entrance
+ const near=y=>clamp(1-Math.abs(y-lv)/RISE,.18,1);
+ arts.forEach((A,i)=>{const t={x:-Math.sin(A.phi),z:Math.cos(A.phi)},hw=A.data.w/2,R=Rout(lv)-.1,c=polar(A.phi,R);
+  mctx.globalAlpha=i===curIdx?1:near(A.h);mctx.strokeStyle=i===curIdx?cols['--accent']:cols['--fg'];mctx.lineWidth=i===curIdx?4:3;
+  mctx.beginPath();mctx.moveTo(X(c.x-t.x*hw),Z(c.z-t.z*hw));mctx.lineTo(X(c.x+t.x*hw),Z(c.z+t.z*hw));mctx.stroke()});
+ avatars.forEach(a=>{mctx.globalAlpha=near(a.g.position.y);mctx.fillStyle=a.v.css;mctx.beginPath();mctx.arc(X(a.g.position.x),Z(a.g.position.z),3.2,0,TAU);mctx.fill()});
+ mctx.globalAlpha=1;
+ const px=X(player.x),pz=Z(player.z),vy=firstPerson?player.yaw:cam.yaw,fx=-Math.sin(vy),fz=-Math.cos(vy),ang=Math.atan2(fz,fx);
+ mctx.fillStyle=cols['--accent'];mctx.globalAlpha=.18;mctx.beginPath();mctx.moveTo(px,pz);mctx.arc(px,pz,26,ang-.55,ang+.55);mctx.closePath();mctx.fill();mctx.globalAlpha=1;
+ mctx.beginPath();mctx.moveTo(px+fx*7,pz+fz*7);mctx.lineTo(px-fx*4-fz*4.5,pz-fz*4+fx*4.5);mctx.lineTo(px-fx*4+fz*4.5,pz-fz*4-fx*4.5);mctx.closePath();mctx.fill()}
+function updateLevel(){$('lvl').textContent=player.state==='lobby'?'로비':`램프 ${turnOf(player.phi)}바퀴 · ${player.y.toFixed(1)} m`}
+
+/* ---------- loop ---------- */
+const CR=.36; // body radius for character-to-character collisions
+// would stepping to (x,z) bring visitor o closer into someone it is already touching?
+function blockedBy(o,x,z){const y=hA(o.phi),cur=o.g.position;
+ const hits=(qx,qy,qz)=>{if(Math.abs(qy-y)>1.2)return false;const dn=Math.hypot(x-qx,z-qz);return dn<2*CR+.08&&dn<Math.hypot(cur.x-qx,cur.z-qz)};
+ return hits(player.x,player.y,player.z)||avatars.some(b=>b!==o&&hits(b.g.position.x,hA(b.phi),b.g.position.z))}
+function updateAvatars(dt,now){avatars.forEach(o=>{let moving=false;
+ if(o.wait>0){o.wait-=dt;o.g.rotation.y+=angDiff(o.face,o.g.rotation.y)*Math.min(1,dt*3);
+  if(o.wait<=0){let j=clamp(o.at+(Math.random()<.5?-1:1)*(1+(Math.random()*2|0)),0,N-1);if(j===o.at)j=o.at>0?o.at-1:1;o.at=j;const A=arts[j];
+   o.tphi=A.phi+(Math.random()-.5)*.25;o.tr=Rout(A.h)-1.8-Math.random()*.7;o.face=faceOut(A.phi)}}
+ else if(o.tphi!=null){const arc=(o.tphi-o.phi)*o.r,dr=o.tr-o.r,dist=Math.hypot(arc,dr),st=1.3*dt;
+  if(dist<=st){o.phi=o.tphi;o.r=o.tr;o.tphi=null;o.wait=5+Math.random()*7}
+  else{const nphi=o.phi+arc/dist*st/o.r,nr=o.r+dr/dist*st,np=polar(nphi,nr);
+   if(blockedBy(o,np.x,np.z)){o.blockT=(o.blockT||0)+dt;   // someone in the way: wait, then step aside
+    if(o.blockT>.9){const h=hA(o.phi),lo=Rin(h)+PT+CR,hi=Rout(h)-CR;o.tr=clamp(o.r+(o.r>(lo+hi)/2?-1:1),lo,hi);o.blockT=0}}
+   else{o.blockT=0;moving=true;o.phi=nphi;o.r=nr;const c=Math.cos(o.phi),s=Math.sin(o.phi),ux=arc/dist,ur=dr/dist;
+    o.g.rotation.y+=angDiff(Math.atan2(-s*ux+c*ur,c*ux+s*ur),o.g.rotation.y)*Math.min(1,dt*8)}}}
+ else o.wait=3;
+ const air=stepJump(o,dt);placeVisitor(o);
+ animateWalk(o,dt*.6,moving,air);
+ if(o.sayUntil&&now>o.sayUntil){o.sayUntil=0;drawName(o)}});
+ if(me.sayUntil&&now>me.sayUntil){me.sayUntil=0;drawName(me)}}
+function pushVisitor(o,px,pz){const c=Math.cos(o.phi),s=Math.sin(o.phi);o.phi=clamp(o.phi+(pz*c-px*s)/o.r,.15,PHI_MAX-.35);
+ const h=hA(o.phi);o.r=clamp(o.r+px*c+pz*s,Rin(h)+PT+CR,Rout(h)-CR);placeVisitor(o)}
+// keep bodies from overlapping: visitors push each other apart; when I bump a visitor it only budges a little
+// and I slide around it (during a guided walk the visitor steps fully aside instead)
+function separate(){
+ for(let i=0;i<avatars.length;i++)for(let j=i+1;j<avatars.length;j++){const A=avatars[i],B=avatars[j];if(Math.abs(hA(A.phi)-hA(B.phi))>1.2)continue;
+  const a=A.g.position,b=B.g.position;let dx=b.x-a.x,dz=b.z-a.z,d=Math.hypot(dx,dz);if(d>=2*CR)continue;if(d<1e-4){dx=1;dz=0;d=1e-4}
+  const o=(2*CR-d)/2;pushVisitor(A,-dx/d*o,-dz/d*o);pushVisitor(B,dx/d*o,dz/d*o)}
+ avatars.forEach(o=>{if(Math.abs(hA(o.phi)-player.y)>1.2)return;const a=o.g.position;let dx=a.x-player.x,dz=a.z-player.z,d=Math.hypot(dx,dz);if(d>=2*CR)return;
+  if(d<1e-4){dx=Math.sin(player.face);dz=Math.cos(player.face);d=1e-4}const nx=dx/d,nz=dz/d,ov=2*CR-d;
+  pushVisitor(o,nx*ov*(glide?1:.25),nz*ov*(glide?1:.25));
+  const d2=Math.hypot(o.g.position.x-player.x,o.g.position.z-player.z);if(d2<2*CR-.005&&!glide)moveBy(-nx*(2*CR-d2),-nz*(2*CR-d2))})}
+function resize(){const w=stage.clientWidth,h=stage.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.fov=w<h?70:62;
+ shift.x=shift.y=-1;updateViewShift(1);camera.updateProjectionMatrix();sizeMap()}
+addEventListener('resize',resize);addEventListener('orientationchange',()=>setTimeout(resize,250));resize();readCols();
+let last=performance.now(),frame=0;
+function tick(now){const dt=Math.min(.05,(now-last)/1000);last=now;frame++;
+ // 3rd person: arrows/WASD/finger all steer the cat (relative to the camera); 1st person: ←/→ and sideways dragging turn the head
+ const kR=keys.KeyD||(!firstPerson&&keys.ArrowRight),kL=keys.KeyA||(!firstPerson&&keys.ArrowLeft);
+ let f=(keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS||keys.ArrowDown?1:0)-joyV.y,st=(kR?1:0)-(kL?1:0)+(firstPerson?0:joyV.x);
+ const turn=(keys.KeyQ?1:0)-(keys.KeyE?1:0)+(firstPerson?(keys.ArrowLeft?1:0)-(keys.ArrowRight?1:0)-joyV.x:0);
+ const ox=player.x,oz=player.z,mag=Math.hypot(f,st);
+ if((turn||mag>.08)&&focus&&focus.ready){player.yaw=cam.yaw;player.pitch=-.2}
+ if(turn){stopAuto();player.yaw+=turn*1.9*dt;dismissHint()}
+ if(mag>.08){stopAuto();dismissHint();if(mag>1){f/=mag;st/=mag}const sp=(keys.ShiftLeft||keys.ShiftRight?6.5:WALK)*dt,sy=Math.sin(player.yaw),cy=Math.cos(player.yaw);
+  moveBy((-sy*f+cy*st)*sp,(-cy*f-sy*st)*sp)}
+ if(glide)stepGlide(dt);
+ const mdx=player.x-ox,mdz=player.z-oz,moving=Math.hypot(mdx,mdz)>.0005;
+ if(moving)player.faceT=Math.atan2(mdx,mdz);
+ player.face+=angDiff(player.faceT,player.face)*Math.min(1,dt*10);
+ // while you steer, the camera swings round behind the cat so you keep seeing its back (slower when walking straight at the camera)
+ if(!firstPerson&&mag>.08&&moving&&!glide&&!(drag&&drag.moved>6)&&!(rot&&rot.on)){const d=angDiff(player.face+Math.PI,player.yaw);
+  player.yaw+=d*Math.min(1,dt*(Math.abs(d)>2.6?.9:3.2));player.pitch+=(-.2-player.pitch)*Math.min(1,dt*1.2)}
+ separate();
+ const air=stepJump(me,dt);
+ me.g.position.set(player.x,player.y+me.jy,player.z);me.g.rotation.y=player.face;animateWalk(me,moving?Math.min(dt,Math.hypot(mdx,mdz)/WALK):dt,moving,air);
+ updateCamera(dt);updateViewShift(dt);
+ if(!firstPerson)me.g.visible=Math.hypot(camera.position.x-player.x,camera.position.z-player.z)>.75;
+ updateAvatars(dt,now);
+ if(frame%2===0)drawMap();
+ if(frame%10===0)updateLevel();
+ if(frame%60===0)readCols();
+ renderer.render(scene,camera);requestAnimationFrame(tick)}
+requestAnimationFrame(tick);
+})();
+</script>

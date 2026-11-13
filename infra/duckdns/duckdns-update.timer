@@ -1,0 +1,20 @@
+# /etc/systemd/system/duckdns-update.timer
+# 5분 주기 keepalive. 고정 IP라 IP 변경 목적이 아니라, DuckDNS의
+# 장기 미갱신 도메인 회수를 막기 위한 주기 갱신이다.
+[Unit]
+Description=Run Meta Gallery DuckDNS keepalive update every 5 minutes
+# 설치·운영 절차: 저장소의 docs/infra/domain-and-https.md 와 infra/duckdns/README.md
+
+[Timer]
+Unit=duckdns-update.service
+# 부팅 1분 후 첫 실행, 이후 직전 실행 완료 시점 기준 5분 간격
+OnBootSec=1min
+OnUnitActiveSec=5min
+# 전원이 꺼져 있던 동안 놓친 실행을 부팅 후 한 번 보충
+Persistent=true
+AccuracySec=30s
+# DuckDNS 쪽에 같은 초에 몰리지 않게 분산
+RandomizedDelaySec=20s
+
+[Install]
+WantedBy=timers.target

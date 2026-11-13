@@ -1,0 +1,25 @@
+# =============================================================================
+# 출처: docs/infra/monitoring.md 3-3 (IT본부 인프라팀 팀원4 작성 본문을 그대로 옮김)
+#   파일 소유 경로가 infra/server/systemd/ 라 팀원3이 파일로 만들었다. 내용은 바꾸지 않았다.
+#   설치: provision.sh 는 이 유닛을 설치하지 않는다(healthcheck.sh 가 scripts/ops/ 소유).
+#         설치·활성화 절차는 docs/infra/monitoring.md 3-3 을 따른다.
+# =============================================================================
+# /etc/systemd/system/meta-gallery-healthcheck.service
+[Unit]
+Description=Meta Gallery instance healthcheck
+After=network-online.target nginx.service postgresql.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/healthcheck.sh
+User=root
+UMask=0077
+# 종료 코드 1(WARN)/2(CRIT)를 실패로 기록해 journal에서 눈에 띄게 한다
+# healthcheck.sh 종료코드: 0=정상, 1=WARN, 2=CRIT.
+# WARN 까지 systemd 가 'failed' 로 표시하면 실패 표시가 상시화되어
+# 진짜 CRIT 을 놓치게 된다. WARN 은 journal 에 남기되 유닛은 성공으로 본다.
+# (2026-11-13 최초 적용 때 백업 덤프 미생성 WARN 3건으로 유닛이 failed 였다.)
+SuccessExitStatus=0 1
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=meta-gallery-healthcheck

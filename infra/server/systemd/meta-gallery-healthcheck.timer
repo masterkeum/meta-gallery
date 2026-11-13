@@ -1,0 +1,19 @@
+# =============================================================================
+# 출처: docs/infra/monitoring.md 3-3 (IT본부 인프라팀 팀원4 작성 본문을 그대로 옮김)
+#   파일 소유 경로가 infra/server/systemd/ 라 팀원3이 파일로 만들었다. 내용은 바꾸지 않았다.
+#   설치: provision.sh 는 이 유닛을 설치하지 않는다(healthcheck.sh 가 scripts/ops/ 소유).
+#         설치·활성화 절차는 docs/infra/monitoring.md 3-3 을 따른다.
+# =============================================================================
+# /etc/systemd/system/meta-gallery-healthcheck.timer
+[Unit]
+Description=Run Meta Gallery healthcheck every 5 minutes
+
+[Timer]
+Unit=meta-gallery-healthcheck.service
+OnBootSec=3min
+OnUnitActiveSec=5min
+AccuracySec=30s
+Persistent=true
+
+[Install]
+WantedBy=timers.target

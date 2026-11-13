@@ -1,0 +1,81 @@
+# =============================================================================
+# meta-gallery 로그 로테이션
+#   설치 위치 : /etc/logrotate.d/meta-gallery   (0644 root:root)
+#   점검      : logrotate -d /etc/logrotate.d/meta-gallery    (-d = dry-run)
+#   강제 실행 : logrotate -f /etc/logrotate.d/meta-gallery    ← 운영 중 함부로 쓰지 않는다
+#
+# 보관 정책(계획서 1-7): nginx 로그 14일 보관 후 백업 버킷으로 아카이브.
+# Ubuntu 기본 /etc/logrotate.d/nginx 는 /var/log/nginx/*.log 를 포괄하므로
+# meta-gallery 로그가 양쪽에 걸린다. provision.sh가 기본 nginx 설정을
+# /var/log/nginx/*.log 에서 meta-gallery-* 를 제외하도록 손대지 않는 대신,
+# 여기서 같은 파일을 다시 지정한다. logrotate는 같은 파일이 두 설정에 중복되면
+# "duplicate log entry" 경고를 내므로, 설치 후 `logrotate -d` 출력으로 중복 여부를
+# 반드시 확인한다(docs/infra/server-layout.md "로그 점검" 참고).
+# =============================================================================
+
+/var/log/nginx/meta-gallery-prod.access.log
+/var/log/nginx/meta-gallery-prod.error.log
+/var/log/nginx/meta-gallery-dev.access.log
+/var/log/nginx/meta-gallery-dev.error.log
+{
+    daily
+    rotate 14
+    missingok
+    notifempty
+    compress
+    delaycompress
+    create 0640 www-data adm
+    sharedscripts
+
+    postrotate
+        # nginx에 로그 파일 재오픈 신호(USR1). 재시작하지 않으므로 무중단.
+        if [ -s /run/nginx.pid ]; then
+            kill -USR1 "$(cat /run/nginx.pid)" 2>/dev/null || true
+        fi
+    endscript
+
+    lastaction
+        # 회전된 압축 로그를 백업 버킷으로 아카이브한다(계획서 1-7).
+        # /etc/meta-gallery/backup.env 가 없거나 S3_ENABLED != 1 이면 조용히 건너뛴다.
+        # sync 를 쓰므로 이미 올라간 객체는 다시 올리지 않는다(버킷 버전 누적 방지).
+        # 업로드만 하고 로컬 파일은 지우지 않는다. 로컬 삭제는 위의 rotate 14 가 담당.
+        if [ -r /etc/meta-gallery/backup.env ]; then
+            set -a
+            . /etc/meta-gallery/backup.env
+            set +a
+            if [ "${S3_ENABLED:-0}" = "1" ] && [ -n "${S3_BUCKET:-}" ]; then
+                aws s3 sync /var/log/nginx/ "s3://${S3_BUCKET}/nginx-logs/" \
+                    --exclude "*" --include "meta-gallery-*.log.*.gz" \
+                    --only-show-errors --no-progress || true
+            fi
+        fi
+    endscript
+}
+
+# 백업 스크립트 자체 로그
+/var/log/meta-gallery/backup.log
+{
+    weekly
+    rotate 8
+    missingok
+    notifempty
+    compress
+    delaycompress
+    create 0640 root adm
+}
+
+# 자체 점검 로그 (scripts/ops/healthcheck.sh, 5분 주기)
+# 팀장 검수 2026-11-13: docs/infra/monitoring.md 4절이 요구한 항목인데 빠져 있어 추가했다
+# (handoff-requests.md 4절 3번 요청). 14일 보관·압축, S3 아카이브는 하지 않는다.
+# backup.log 를 위에서 이미 지정했으므로 와일드카드 대신 파일을 직접 지정한다
+# (logrotate 는 같은 파일이 두 번 지정되면 "duplicate log entry" 로 설정 전체를 거부한다).
+/var/log/meta-gallery/healthcheck.log
+{
+    daily
+    rotate 14
+    missingok
+    notifempty
+    compress
+    delaycompress
+    create 0640 root adm
+}

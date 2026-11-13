@@ -1,0 +1,55 @@
+# /etc/systemd/system/duckdns-update.service
+# 메타 갤러리 DuckDNS keepalive 갱신 (oneshot, timer가 호출)
+[Unit]
+Description=Meta Gallery DuckDNS keepalive update
+# 설치·운영 절차: 저장소의 docs/infra/domain-and-https.md 와 infra/duckdns/README.md
+After=network-online.target
+Wants=network-online.target
+# 토큰 파일이 없으면 기동하지 않는다(설치 직후 실패 로그 방지)
+ConditionPathExists=/etc/meta-gallery/duckdns.env
+
+[Service]
+Type=oneshot
+# 토큰은 인자로 넘기지 않는다. 스크립트가 /etc/meta-gallery/duckdns.env(0600)에서 직접 읽는다.
+# EnvironmentFile= 을 쓰지 않는 이유: 토큰이 서비스 프로세스 환경변수로 올라가는 것을 피한다.
+ExecStart=/usr/local/sbin/duckdns-update.sh
+User=root
+Group=root
+UMask=0077
+TimeoutStartSec=60
+
+# 실패 시 짧게 재시도 (timer가 5분마다 다시 돌므로 1회만)
+Restart=no
+
+# --- 샌드박스 (읽기 전용 동작이므로 쓰기 권한을 모두 막는다) ---
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectProc=invisible
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictSUIDSGID=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+# 로그는 journald로만 보낸다(토큰은 스크립트가 redact 처리).
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=duckdns-update
+
+[Install]
+WantedBy=multi-user.target
