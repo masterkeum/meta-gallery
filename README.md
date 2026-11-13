@@ -404,6 +404,12 @@ python3 -m http.server 8000 --directory dist
 
 ## 8. 배포
 
+
+> **워크플로 파일 위치**: 이 공개 저장소에서는 `.github/workflows/` 가 아니라
+> [`docs/ci/`](docs/ci/) 에 둔다. 공개 저장소에는 서버 SSH 시크릿이 없어
+> Actions가 돌면 실패만 쌓이기 때문이다. 내용은 운영 저장소와 같다 →
+> [`docs/ci/README.md`](docs/ci/README.md)
+
 ### 자동 (GitHub Actions)
 
 | 워크플로 | 트리거 | 하는 일 |

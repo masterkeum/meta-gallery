@@ -1,0 +1,184 @@
+name: CI
+
+# PR·push 공통 검사. 배포는 하지 않는다.
+# 기준: docs/plans/2026-11-13-aws-infra.md 1-6 / docs/infra/git-and-cicd.md
+# 주관: IT본부 인프라팀
+
+on:
+  pull_request:
+    branches: [main, dev]
+  push:
+    branches: [main, dev]
+  workflow_dispatch:
+
+# 최소 권한. 포크 PR 에서 시크릿이 노출되지 않도록 어떤 시크릿도 쓰지 않는다.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # gallery-mockup.html 이 참조해야 하는 three.js CDN (r128 고정, README.md "기술 결정" 참고)
+  EXPECTED_THREE_URL: "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"
+  # dist/meta-gallery.html 이 이보다 작으면 빌드가 깨진 것으로 본다
+  MIN_ARTIFACT_BYTES: "20000"
+
+jobs:
+  build:
+    name: 정적 빌드 검증
+    runs-on: ubuntu-latest
+    steps:
+      - name: 소스 가져오기
+        uses: actions/checkout@v4
+
+      - name: Python 준비
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: dist/meta-gallery.html 빌드
+        run: python3 scripts/build-standalone.py
+
+      - name: 산출물이 비어 있지 않은지 확인
+        run: |
+          set -euo pipefail
+          OUT="dist/meta-gallery.html"
+          if [ ! -f "$OUT" ]; then
+            echo "::error::빌드 산출물이 없다: $OUT"
+            exit 1
+          fi
+          if [ ! -s "$OUT" ]; then
+            echo "::error::빌드 산출물이 비어 있다: $OUT"
+            exit 1
+          fi
+          SIZE="$(wc -c <"$OUT" | tr -d ' ')"
+          echo "산출물 크기: ${SIZE} bytes"
+          if [ "$SIZE" -lt "$MIN_ARTIFACT_BYTES" ]; then
+            echo "::error::산출물이 너무 작다 (${SIZE} < ${MIN_ARTIFACT_BYTES} bytes)"
+            exit 1
+          fi
+          for needle in "<!doctype html>" "<html lang=\"ko\">" "name=\"viewport\"" "</body>"; do
+            if ! grep -F -q "$needle" "$OUT"; then
+              echo "::error::산출물에 필수 문자열이 없다: ${needle}"
+              exit 1
+            fi
+          done
+          echo "산출물 구조 확인 완료"
+
+      - name: three.js r128 CDN 참조 유지 확인
+        run: |
+          set -euo pipefail
+          for f in gallery-mockup.html dist/meta-gallery.html; do
+            if ! grep -F -q "$EXPECTED_THREE_URL" "$f"; then
+              echo "::error file=${f}::three.js r128 CDN 참조가 없다. 기대값: ${EXPECTED_THREE_URL}"
+              exit 1
+            fi
+          done
+          # r128 이 아닌 버전 참조가 섞여 들어오면 실패시킨다
+          FOUND="$(grep -Eo 'three\.js/r[0-9]+' gallery-mockup.html | sort -u | paste -sd, - || true)"
+          if [ -z "$FOUND" ]; then
+            echo "::error::gallery-mockup.html 에 three.js 버전 참조가 없다"
+            exit 1
+          fi
+          if [ "$FOUND" != "three.js/r128" ]; then
+            echo "::error::three.js 버전이 r128 이 아니다: ${FOUND}"
+            echo "r128 에 없는 API(CapsuleGeometry 등)를 쓰면 화면이 깨진다. README.md "기술 결정" 참고."
+            exit 1
+          fi
+          echo "three.js 버전 확인 완료: ${FOUND}"
+
+      - name: 산출물 업로드
+        uses: actions/upload-artifact@v4
+        with:
+          name: meta-gallery-html-${{ github.sha }}
+          path: dist/meta-gallery.html
+          retention-days: 7
+          if-no-files-found: error
+
+  shell-lint:
+    name: 셸 스크립트 검사 (bash -n + shellcheck)
+    runs-on: ubuntu-latest
+    steps:
+      - name: 소스 가져오기
+        uses: actions/checkout@v4
+
+      - name: 셸 스크립트 문법·정적 검사
+        run: |
+          set -euo pipefail
+          # mapfile 은 bash 4+ 전용이라 쓰지 않는다. 러너는 bash 5지만
+          # macOS 기본 bash 는 3.2 라서 이 블록을 로컬에서 검증할 수 없게 된다.
+          files=()
+          while IFS= read -r f; do files+=("$f"); done < <(git ls-files '*.sh' '*.bash')
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "검사할 셸 스크립트가 없다"
+            exit 0
+          fi
+          printf '검사 대상 %s개\n' "${#files[@]}"
+          printf '  %s\n' "${files[@]}"
+
+          for f in "${files[@]}"; do
+            bash -n "$f"
+          done
+          echo "bash -n 통과"
+
+          if ! command -v shellcheck >/dev/null 2>&1; then
+            echo "::error::shellcheck 가 러너에 없다. 설치 단계를 추가해야 한다."
+            exit 1
+          fi
+          shellcheck --version
+          shellcheck --format=gcc --external-sources "${files[@]}"
+          echo "shellcheck 통과"
+
+  terraform-fmt:
+    name: Terraform 형식 검사
+    runs-on: ubuntu-latest
+    steps:
+      - name: 소스 가져오기
+        uses: actions/checkout@v4
+
+      - name: Terraform 준비
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.17.1"
+          terraform_wrapper: false
+
+      - name: terraform fmt -check
+        run: |
+          set -euo pipefail
+          if [ ! -d infra/terraform ]; then
+            echo "infra/terraform 디렉터리가 없다 → 건너뜀"
+            exit 0
+          fi
+          terraform fmt -check -recursive -diff infra/terraform
+          echo "terraform fmt 통과"
+        # terraform init/plan/apply 는 돌리지 않는다. AWS 자격증명이 없고,
+        # 실제 자원 생성은 CEO 승인 후에만 한다(docs/plans/2026-11-13-aws-infra.md 0장).
+
+  secret-scan:
+    name: 평문 비밀값·워크플로 검사
+    runs-on: ubuntu-latest
+    steps:
+      - name: 소스 가져오기
+        uses: actions/checkout@v4
+
+      - name: Python 준비
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 워크플로 YAML 파싱 확인
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet pyyaml
+          python3 -c "import yaml,sys;[yaml.safe_load(open(f,encoding='utf-8')) for f in sys.argv[1:]];print('워크플로 YAML 파싱 OK:',len(sys.argv)-1,'개')" .github/workflows/*.yml
+
+      - name: 비밀값 검사기 회귀 테스트
+        # 검사기가 "잡아야 할 것을 잡고, 잡아선 안 될 것을 넘기는지" 먼저 확인한다.
+        # 표본: scripts/ci/testdata/ (2026-11-13 팀장 검수에서 누락으로 지적된 9건)
+        run: python3 scripts/ci/test-secret-scan.py
+
+      - name: 평문 비밀값 패턴 검사
+        # 검사기는 scripts/ci/secret-scan.py 로 분리돼 있다. 이 ci.yml 도 검사 대상이다.
+        run: python3 scripts/ci/secret-scan.py

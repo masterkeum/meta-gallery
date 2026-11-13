@@ -1,0 +1,254 @@
+name: Deploy (prod)
+
+# 운영계 배포. `main` 브랜치 push 또는 수동 실행으로만 돈다.
+# 흐름: 빌드 → SSH 업로드 → releases/<sha> 설치 → current 심링크 교체
+#       → /healthz 200 확인 → 실패 시 이전 릴리스로 되돌림
+# 기준: docs/plans/2026-11-13-aws-infra.md 1-2·1-6 / docs/infra/git-and-cicd.md
+# 주관: IT본부 인프라팀
+#
+# 운영계는 GitHub Environment `prod` 의 수동 승인(required reviewer)을 거치는 전제로 작성했다.
+# 그 설정은 GitHub 웹에서 해야 하고, 둘지 여부는 **CEO 결정 대기 중**이다
+# (docs/plans/2026-11-13-aws-infra.md 5장 4번). 승인자가 지정되지 않으면 승인 없이 바로 배포된다.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# 같은 환경에 배포가 겹치면 심링크가 엉킨다. 취소하지 않고 순서대로 처리한다.
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+env:
+  ENV_NAME: "prod"
+  PUBLIC_HOST: "metagallery.duckdns.org"
+  DUCKDNS_SUBDOMAIN: "metagallery"
+  EXPECTED_BRANCH: "refs/heads/main"
+  EXPECTED_THREE_URL: "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"
+  MIN_ARTIFACT_BYTES: "20000"
+  KEEP_RELEASES: "10"
+
+jobs:
+  guard:
+    name: 배포 전 안전 점검
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: 브랜치 확인
+        env:
+          ACTUAL_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          if [ "$ACTUAL_REF" != "$EXPECTED_BRANCH" ]; then
+            echo "::error::운영계 배포는 ${EXPECTED_BRANCH} 에서만 한다. 현재: ${ACTUAL_REF}"
+            exit 1
+          fi
+          echo "브랜치 확인 완료: ${ACTUAL_REF}"
+
+  deploy:
+    name: 운영계 배포
+    needs: guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # GitHub Environment 에 시크릿을 분리 저장한다.
+    # 운영계는 Environment 'prod' 에 수동 승인(required reviewer)을 거는 전제다.
+    # 설정은 GitHub 웹 → Settings → Environments 에서 한다(CEO 결정 대기).
+    environment:
+      name: prod
+      url: https://metagallery.duckdns.org/
+    steps:
+      - name: 소스 가져오기
+        uses: actions/checkout@v4
+
+      - name: Python 준비
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: dist/meta-gallery.html 빌드
+        run: python3 scripts/build-standalone.py
+
+      - name: 산출물 검증
+        run: |
+          set -euo pipefail
+          OUT="dist/meta-gallery.html"
+          if [ ! -s "$OUT" ]; then
+            echo "::error::빌드 산출물이 없거나 비어 있다: $OUT"
+            exit 1
+          fi
+          SIZE="$(wc -c <"$OUT" | tr -d ' ')"
+          if [ "$SIZE" -lt "$MIN_ARTIFACT_BYTES" ]; then
+            echo "::error::산출물이 너무 작다 (${SIZE} < ${MIN_ARTIFACT_BYTES} bytes)"
+            exit 1
+          fi
+          if ! grep -F -q "$EXPECTED_THREE_URL" "$OUT"; then
+            echo "::error::산출물에 three.js r128 CDN 참조가 없다"
+            exit 1
+          fi
+          echo "산출물 확인 완료: ${SIZE} bytes"
+
+      - name: 필요한 시크릿이 등록돼 있는지 확인
+        env:
+          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
+          LIGHTSAIL_SSH_USER: ${{ secrets.LIGHTSAIL_SSH_USER }}
+          LIGHTSAIL_SSH_KEY: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          missing=""
+          [ -n "${LIGHTSAIL_HOST:-}" ]     || missing="${missing} LIGHTSAIL_HOST"
+          [ -n "${LIGHTSAIL_SSH_USER:-}" ] || missing="${missing} LIGHTSAIL_SSH_USER"
+          [ -n "${LIGHTSAIL_SSH_KEY:-}" ]  || missing="${missing} LIGHTSAIL_SSH_KEY"
+          if [ -n "$missing" ]; then
+            echo "::error::Environment 'prod' 에 등록되지 않은 시크릿:${missing}"
+            echo "등록 절차는 docs/infra/git-and-cicd.md '시크릿 등록' 절 참고."
+            exit 1
+          fi
+          echo "시크릿 확인 완료 (값은 출력하지 않는다)"
+
+      - name: SSH 접속 준비
+        env:
+          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
+          LIGHTSAIL_SSH_KEY: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+          LIGHTSAIL_SSH_HOST_KEY: ${{ secrets.LIGHTSAIL_SSH_HOST_KEY }}
+        run: |
+          set -euo pipefail
+          umask 077
+          KEY_FILE="${RUNNER_TEMP}/deploy_key"
+          KNOWN_HOSTS="${RUNNER_TEMP}/known_hosts"
+          printf '%s\n' "$LIGHTSAIL_SSH_KEY" >"$KEY_FILE"
+          chmod 600 "$KEY_FILE"
+
+          if [ -n "${LIGHTSAIL_SSH_HOST_KEY:-}" ]; then
+            printf '%s\n' "$LIGHTSAIL_SSH_HOST_KEY" >"$KNOWN_HOSTS"
+            echo "등록된 호스트 키로 StrictHostKeyChecking=yes 를 쓴다"
+          else
+            # 호스트 키 시크릿이 없으면 최초 접속 시 받은 키를 그대로 믿는다(중간자 공격 위험).
+            # LIGHTSAIL_SSH_HOST_KEY 등록을 권고한다 → 정보보호본부 애플리케이션보안팀 검토 대상.
+            echo "::warning::LIGHTSAIL_SSH_HOST_KEY 가 없어 ssh-keyscan 결과를 신뢰한다(TOFU). 등록을 권고한다."
+            ssh-keyscan -T 15 -H "$LIGHTSAIL_HOST" >"$KNOWN_HOSTS" 2>/dev/null
+          fi
+          chmod 600 "$KNOWN_HOSTS"
+
+          if [ ! -s "$KNOWN_HOSTS" ]; then
+            echo "::error::호스트 키를 확보하지 못했다. 서버가 떠 있는지, 22번 포트가 열려 있는지 확인해야 한다."
+            exit 1
+          fi
+
+          {
+            echo "SSH_KEY_FILE=${KEY_FILE}"
+            echo "SSH_KNOWN_HOSTS=${KNOWN_HOSTS}"
+            echo "STAGE_DIR=/tmp/meta-gallery-deploy-${GITHUB_SHA}"
+          } >>"$GITHUB_ENV"
+
+      - name: 릴리스 파일 업로드
+        env:
+          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
+          LIGHTSAIL_SSH_USER: ${{ secrets.LIGHTSAIL_SSH_USER }}
+        run: |
+          set -euo pipefail
+          SSH_OPTS=(-i "$SSH_KEY_FILE" -o IdentitiesOnly=yes
+                    -o UserKnownHostsFile="$SSH_KNOWN_HOSTS"
+                    -o StrictHostKeyChecking=yes -o BatchMode=yes
+                    -o ConnectTimeout=15)
+          ssh "${SSH_OPTS[@]}" "${LIGHTSAIL_SSH_USER}@${LIGHTSAIL_HOST}" \
+            "mkdir -p '${STAGE_DIR}'"
+          scp "${SSH_OPTS[@]}" \
+            dist/meta-gallery.html \
+            scripts/deploy/remote-release.sh \
+            scripts/deploy/rollback.sh \
+            "${LIGHTSAIL_SSH_USER}@${LIGHTSAIL_HOST}:${STAGE_DIR}/"
+          echo "업로드 완료: ${STAGE_DIR}"
+
+      - name: 릴리스 전환 + /healthz 확인
+        env:
+          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
+          LIGHTSAIL_SSH_USER: ${{ secrets.LIGHTSAIL_SSH_USER }}
+        run: |
+          set -euo pipefail
+          SSH_OPTS=(-i "$SSH_KEY_FILE" -o IdentitiesOnly=yes
+                    -o UserKnownHostsFile="$SSH_KNOWN_HOSTS"
+                    -o StrictHostKeyChecking=yes -o BatchMode=yes
+                    -o ConnectTimeout=15)
+          # github.actor 를 그대로 넘기지 않고 안전한 문자만 남긴다(명령 주입 방지)
+          ACTOR="$(printf '%s' "$GITHUB_ACTOR" | tr -cd '[:alnum:]._-')"
+          ssh "${SSH_OPTS[@]}" "${LIGHTSAIL_SSH_USER}@${LIGHTSAIL_HOST}" \
+            "DEPLOY_ACTOR='${ACTOR}' bash '${STAGE_DIR}/remote-release.sh' \
+               --env '${ENV_NAME}' --sha '${GITHUB_SHA}' \
+               --artifact '${STAGE_DIR}/meta-gallery.html' \
+               --keep '${KEEP_RELEASES}'"
+
+      - name: 배포 실패 시 롤백
+        if: failure()
+        env:
+          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
+          LIGHTSAIL_SSH_USER: ${{ secrets.LIGHTSAIL_SSH_USER }}
+        run: |
+          set -uo pipefail
+          # remote-release.sh 가 이미 자동 롤백을 시도한다. 이 단계는 안전망이다.
+          # (심링크 전환 전에 실패했다면 되돌릴 것이 없고, 스크립트가 그렇게 알린다.)
+          if [ -z "${SSH_KEY_FILE:-}" ]; then
+            echo "::warning::SSH 준비 전에 실패했다. 서버 상태는 그대로다. 롤백할 것이 없다."
+            exit 0
+          fi
+          SSH_OPTS=(-i "$SSH_KEY_FILE" -o IdentitiesOnly=yes
+                    -o UserKnownHostsFile="$SSH_KNOWN_HOSTS"
+                    -o StrictHostKeyChecking=yes -o BatchMode=yes
+                    -o ConnectTimeout=15)
+          ssh "${SSH_OPTS[@]}" "${LIGHTSAIL_SSH_USER}@${LIGHTSAIL_HOST}" \
+            "bash '${STAGE_DIR}/rollback.sh' --env '${ENV_NAME}'" \
+            || echo "::warning::자동 롤백도 실패했다. docs/infra/git-and-cicd.md '수동 롤백' 절차가 필요하다."
+          echo "::error::배포가 실패했다. 현재 서비스 상태를 반드시 수동 확인해야 한다."
+
+      - name: DuckDNS 레코드 갱신 (토큰이 등록된 경우에만)
+        if: success()
+        continue-on-error: true
+        env:
+          DUCKDNS_TOKEN: ${{ secrets.DUCKDNS_TOKEN }}
+        run: |
+          set -uo pipefail
+          if [ -z "${DUCKDNS_TOKEN:-}" ]; then
+            echo "DUCKDNS_TOKEN 미등록 → 건너뜀 (서버의 systemd timer 가 5분마다 갱신한다)"
+            exit 0
+          fi
+          umask 077
+          CONF="${RUNNER_TEMP}/duckdns.conf"
+          # 토큰을 명령행 인자나 로그에 남기지 않기 위해 curl 설정 파일로 넘긴다.
+          printf 'url = "https://www.duckdns.org/update?domains=%s&token=%s&ip="\nsilent\n' \
+            "$DUCKDNS_SUBDOMAIN" "$DUCKDNS_TOKEN" >"$CONF"
+          RESP="$(curl --config "$CONF" --max-time 10 || true)"
+          : >"$CONF"
+          echo "DuckDNS 응답: ${RESP:-(없음)}"
+          [ "$RESP" = "OK" ] || echo "::warning::DuckDNS 갱신 응답이 OK 가 아니다"
+
+      - name: 외부에서 접속 확인 (참고용)
+        if: success()
+        continue-on-error: true
+        run: |
+          set -uo pipefail
+          # 참고용이다. HTTPS 인증서 미발급, 개발계 Basic 인증 때문에 실패할 수 있어
+          # 배포 성공 여부를 이 단계로 판정하지 않는다. 판정은 서버 내부 /healthz 가 한다.
+          CODE="$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' \
+            "https://${PUBLIC_HOST}/healthz" || echo "000")"
+          echo "https://${PUBLIC_HOST}/healthz → HTTP ${CODE}"
+
+      - name: 배포 결과 요약
+        if: always()
+        run: |
+          {
+            echo "### 운영계 배포 결과"
+            echo ""
+            echo "| 항목 | 값 |"
+            echo "|---|---|"
+            echo "| 환경 | \`${ENV_NAME}\` |"
+            echo "| 커밋 | \`${GITHUB_SHA}\` |"
+            echo "| 릴리스 경로 | \`/srv/meta-gallery/${ENV_NAME}/releases/${GITHUB_SHA}\` |"
+            echo "| 공개 주소 | https://${PUBLIC_HOST}/ |"
+            echo "| 결과 | ${{ job.status }} |"
+            echo ""
+            echo "롤백이 필요하면 서버에서: \`bash rollback.sh --env ${ENV_NAME}\`"
+            echo "(절차: docs/infra/git-and-cicd.md '롤백')"
+          } >>"$GITHUB_STEP_SUMMARY"
