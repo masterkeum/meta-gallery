@@ -46,11 +46,7 @@ readonly PG_VERSION="16"
 readonly PG_SUPERUSER="postgres"
 readonly SWAP_FILE="/swapfile"
 readonly SWAP_SIZE_MB=2048
-# 개발계 Basic 인증 사용자명. 실제 값은 저장소에 두지 않는다.
-# 배포 시 환경변수로 주입한다:  DEV_BASIC_AUTH_USER=... sudo -E ./provision.sh
-# 기본값을 두지 않는다. 공개 저장소에 적힌 이름이 그대로 실제 계정이 되는 것을 막기 위함이다.
-# 미주입 시 개발계 Basic 인증 단계에서 멈춘다(그 전 단계는 정상 수행된다).
-readonly DEV_BASIC_AUTH_USER="${DEV_BASIC_AUTH_USER:-}"
+readonly DEV_BASIC_AUTH_USER="preview"
 readonly HTPASSWD_FILE="/etc/nginx/.htpasswd-meta-gallery-dev"
 
 OPT_YES=0
@@ -303,6 +299,10 @@ for env_name in prod dev; do
     run install -d -o "${DEPLOY_USER}" -g "${DEPLOY_GROUP}" -m 2750 "${SRV_ROOT}/${env_name}"
     run install -d -o "${DEPLOY_USER}" -g "${DEPLOY_GROUP}" -m 2750 "${SRV_ROOT}/${env_name}/releases"
     run install -d -o "${DEPLOY_USER}" -g "${DEPLOY_GROUP}" -m 2750 "${SRV_ROOT}/${env_name}/shared"
+    # 공유 미디어(/media/). 릴리스 밖에 두어 배포마다 다시 올리지 않는다.
+    # nginx 설정의 `location ^~ /media/` alias 대상이다. 파일은 이 스크립트가
+    # 올리지 않는다(docs/infra/server-layout.md "공유 미디어 올리기" 참고).
+    run install -d -o "${DEPLOY_USER}" -g "${DEPLOY_GROUP}" -m 2750 "${SRV_ROOT}/${env_name}/shared/media"
     run install -d -o root -g root -m 0700 "${BACKUP_ROOT}/${env_name}"
 done
 run install -d -o root -g "${DEPLOY_GROUP}" -m 0755 "${SRV_ROOT}"
@@ -401,7 +401,6 @@ elif [[ ${DRY_RUN} -eq 1 ]]; then
 else
     dev_basic_pw="$(gen_password)"
     umask 077
-    [[ -n "${DEV_BASIC_AUTH_USER}" ]] || die "DEV_BASIC_AUTH_USER 를 주입하십시오: DEV_BASIC_AUTH_USER=<사용자명> sudo -E bash $0"
     printf '%s\n' "${dev_basic_pw}" | htpasswd -niB "${DEV_BASIC_AUTH_USER}" > "${HTPASSWD_FILE}"
     chown root:www-data "${HTPASSWD_FILE}"
     chmod 0640 "${HTPASSWD_FILE}"

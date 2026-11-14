@@ -24,6 +24,8 @@
 
 [hidden]{display:none!important}
 .sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0;pointer-events:none}
+/* the signage clip is only ever shown as a 3D texture, but the element has to stay in the document to decode */
+.vhide{position:fixed;left:-24px;top:-24px;width:2px;height:2px;opacity:.01;border:0;pointer-events:none;z-index:-1}
 html,body{height:100%}
 body{background:var(--bg);color:var(--fg);font-family:var(--f-body);overflow:hidden;-webkit-font-smoothing:antialiased;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
@@ -461,6 +463,136 @@ const titleMesh=new THREE.Mesh(new THREE.PlaneGeometry(TW,TH),new THREE.MeshBasi
 {const R=Rin(hA(TPHI)),r=R-(TW/2*TW/2/(2*R)+.04),tp=polar(TPHI,r);
  titleMesh.position.set(tp.x,TY,tp.z);titleMesh.rotation.y=Math.atan2(-Math.cos(TPHI),-Math.sin(TPHI));scene.add(titleMesh)}
 
+/* ---------- lobby signage (portrait video wall) ---------- */
+// CEO 2026-11-14: a large signage in the lobby that plays the welcome clip exactly three times.
+// The clip is 720x1280, so the panel is 9:16 with 3.06 m of screen - three times the 1 m (2/3 scale) cat.
+// Placement: the lobby wall is only hA(phi)+PARA tall, so a 3.4 m cabinet needs phi > 4.0; the exhibition
+// title already spans 3.67..4.18 rad. SG_PHI = 4.5 leaves ~0.7 m of clear wall beside the title, keeps the
+// whole cabinet under the parapet above it (3.71 m of wall at the near edge vs. a 3.39 m cabinet) and sits
+// 26 deg off the opening camera axis - inside the desktop field of view, a short turn away on a phone.
+const SG_PHI=4.5,SG_SW=1.72,SG_SH=3.06,SG_BEZ=.075,SG_D=.16,SG_FOOT=.18,SG_DEEP=.42,SG_HW=1.05;
+// The clip MUST stay a same-origin relative path. Never hard-code the absolute https://<host>/media/... form:
+// the server deliberately sends no Access-Control-Allow-Origin, so the dev page would be asking the prod
+// domain cross-origin and the request would be blocked (confirmed with IT infra, 2026-11-14). For the same
+// reason the fallback screen is drawn on a canvas instead of loading media/signage-poster.jpg: three.js r128
+// Loader sets crossOrigin='anonymous', so a cross-origin poster fails to load outright - a fallback that needs
+// the network is not a fallback. A standby canvas works on an artifact, over file:// and offline alike.
+const SG_SRC='/media/signage.mp4',SG_PLAYS=3;
+const SG_RG=Math.sqrt((R_IN0+.02)*(R_IN0+.02)-SG_HW*SG_HW); // pushed in so the flat panel's back corners stay on the lobby disc
+const SG_CY=SG_FOOT+(SG_SH+2*SG_BEZ)/2;                     // cabinet (and screen) centre height
+const sgN={x:-Math.cos(SG_PHI),z:-Math.sin(SG_PHI)},sgT={x:-Math.sin(SG_PHI),z:Math.cos(SG_PHI)};
+const sgC=polar(SG_PHI,SG_RG);
+// three canvases: the standby/fallback artwork, the frozen last frame, and the caption strip
+const sgCv=document.createElement('canvas');sgCv.width=576;sgCv.height=1024;
+const sgTex=new THREE.CanvasTexture(sgCv);sgTex.anisotropy=maxAniso;
+const sgLastCv=document.createElement('canvas');sgLastCv.width=576;sgLastCv.height=1024;
+const sgLastTex=new THREE.CanvasTexture(sgLastCv);sgLastTex.anisotropy=maxAniso;
+const sgBarCv=document.createElement('canvas');sgBarCv.width=1024;sgBarCv.height=176;
+const sgBarTex=new THREE.CanvasTexture(sgBarCv);sgBarTex.anisotropy=maxAniso;
+const sgScreenMat=new THREE.MeshBasicMaterial({map:sgTex});  // unlit: the screen is its own light source
+const sgGroup=new THREE.Group();
+sgGroup.position.set(sgC.x,0,sgC.z);
+sgGroup.rotation.y=Math.atan2(sgN.x,sgN.z);                  // local +z points into the atrium, as for the frames
+scene.add(sgGroup);
+const sgCab=new THREE.Mesh(new THREE.BoxGeometry(SG_SW+2*SG_BEZ,SG_SH+2*SG_BEZ,SG_D),new THREE.MeshLambertMaterial({color:0x22232a}));
+sgCab.position.set(0,SG_CY,SG_D/2);sgGroup.add(sgCab);
+const sgFoot=new THREE.Mesh(new THREE.BoxGeometry(SG_HW*2,SG_FOOT,SG_DEEP),new THREE.MeshLambertMaterial({color:0x33343c}));
+sgFoot.position.set(0,SG_FOOT/2,SG_DEEP/2);sgGroup.add(sgFoot);
+const sgRim=new THREE.Mesh(new THREE.PlaneGeometry(SG_SW+SG_BEZ*1.6,SG_SH+SG_BEZ*1.6),new THREE.MeshBasicMaterial({color:0xfff2dc,transparent:true,opacity:.34}));
+sgRim.position.set(0,SG_CY,SG_D+.002);sgGroup.add(sgRim);     // warm bleed around the bezel
+const sgScreen=new THREE.Mesh(new THREE.PlaneGeometry(SG_SW,SG_SH),sgScreenMat);
+sgScreen.position.set(0,SG_CY,SG_D+.005);sgGroup.add(sgScreen);
+const SG_BARH=SG_SW*sgBarCv.height/sgBarCv.width;
+const sgBar=new THREE.Mesh(new THREE.PlaneGeometry(SG_SW,SG_BARH),new THREE.MeshBasicMaterial({map:sgBarTex,transparent:true}));
+// mute state / replay hint, on the glass. It rides along the TOP of the screen: standing in front of the
+// panel your own cat covers the bottom third, and the clip keeps its subject in the middle of the frame.
+sgBar.position.set(0,SG_CY+SG_SH/2-SG_BARH/2-.06,SG_D+.008);sgGroup.add(sgBar);
+const sgPool=new THREE.Mesh(new THREE.PlaneGeometry(2.9,1.7),new THREE.MeshBasicMaterial({map:glowTex,transparent:true,opacity:.5,depthWrite:false}));
+sgPool.rotation.x=-Math.PI/2;sgPool.position.set(0,.012,SG_DEEP+.75);sgGroup.add(sgPool);  // pool of screen light on the floor
+sgCab.userData.sg=sgFoot.userData.sg=sgScreen.userData.sg=sgRim.userData.sg=sgBar.userData.sg=true;
+solids.push(sgCab,sgFoot);            // the 3rd person camera stops in front of the panel like any wall
+const sgHits=[sgScreen,sgRim,sgBar];  // extra pick targets; the cabinet and foot already ride in solids
+// is any part of the screen inside the view? used to let the clip rest while you are looking elsewhere
+const sgSphere=new THREE.Sphere(new THREE.Vector3(sgC.x+sgN.x*(SG_D+.005),SG_CY,sgC.z+sgN.z*(SG_D+.005)),Math.hypot(SG_SW,SG_SH)/2);
+const sgFrustum=new THREE.Frustum(),sgM4=new THREE.Matrix4();
+function sgSeen(){camera.updateMatrixWorld();sgM4.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);
+ sgFrustum.setFromProjectionMatrix(sgM4);return sgFrustum.intersectsSphere(sgSphere)}
+
+let sgState='load',sgWhy='',sgPlays=0,sgSound=false,sgVid=null,sgVTex=null,sgTimer=0,sgHide=0;
+function sgLine(){const n=Math.min(sgPlays+1,SG_PLAYS);
+ if(sgState==='fail')return{on:false,t:sgVid?'영상 불러오기 실패 · 눌러서 재시도':'안내 영상을 재생할 수 없습니다'};
+ if(sgState==='block')return{on:false,t:'눌러서 안내 영상 재생'};
+ if(sgState==='done')return{on:sgSound,t:SG_PLAYS+'회 재생 완료 · 눌러서 다시 보기'};
+ if(sgState==='play')return sgSound?{on:true,t:'소리 켜짐 ('+n+'/'+SG_PLAYS+') · 눌러서 음소거'}
+                                  :{on:false,t:'음소거 ('+n+'/'+SG_PLAYS+') · 눌러서 소리 켜기'};
+ return{on:false,t:'안내 영상 불러오는 중…'}}
+function sgSpk(c,x,y,s,on){c.save();c.fillStyle=c.strokeStyle='#f4f3ef';c.lineWidth=s*.13;c.lineCap='round';
+ c.beginPath();c.moveTo(x,y-s*.2);c.lineTo(x+s*.24,y-s*.2);c.lineTo(x+s*.58,y-s*.52);c.lineTo(x+s*.58,y+s*.52);c.lineTo(x+s*.24,y+s*.2);c.lineTo(x,y+s*.2);c.closePath();c.fill();
+ if(on){[.26,.5].forEach(r=>{c.beginPath();c.arc(x+s*.6,y,s*(.3+r),-.75,.75);c.stroke()})}
+ else{c.beginPath();c.moveTo(x+s*.8,y-s*.26);c.lineTo(x+s*1.3,y+s*.26);c.moveTo(x+s*1.3,y-s*.26);c.lineTo(x+s*.8,y+s*.26);c.stroke()}
+ c.restore()}
+function drawSignBar(){const c=sgBarCv.getContext('2d'),W=sgBarCv.width,H=sgBarCv.height,L=sgLine();
+ c.clearRect(0,0,W,H);
+ rr(c,0,18,W,H-36,26);c.fillStyle='rgba(14,15,20,.78)';c.fill();
+ sgSpk(c,46,H/2,46,L.on);
+ c.fillStyle='#f4f3ef';c.textBaseline='middle';c.font='500 40px "IBM Plex Sans KR", sans-serif';
+ c.fillText(L.t,126,H/2+2,W-170);
+ c.textBaseline='alphabetic';sgBarTex.needsUpdate=true}
+function drawSignScreen(){const c=sgCv.getContext('2d'),W=sgCv.width,H=sgCv.height;
+ const g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,'#2a2f3e');g.addColorStop(.52,'#1a1d26');g.addColorStop(1,'#101218');
+ c.fillStyle=g;c.fillRect(0,0,W,H);
+ c.strokeStyle='rgba(255,246,228,.14)';c.lineWidth=2;c.strokeRect(26,26,W-52,H-52);
+ c.textAlign='center';
+ c.fillStyle='rgba(244,243,239,.6)';c.font='500 26px "IBM Plex Mono", monospace';c.fillText('META GALLERY · 안내 영상',W/2,132);
+ c.fillStyle='#f6f4ef';c.font='800 86px "Nanum Myeongjo", serif';c.fillText('금경희',W/2,272);
+ c.font='800 54px "Nanum Myeongjo", serif';c.fillText('포트폴리오 개인전',W/2,346);
+ c.fillStyle='rgba(244,243,239,.55)';c.font='400 24px "IBM Plex Sans KR", sans-serif';c.fillText('Portfolio Solo Exhibition',W/2,394);
+ c.strokeStyle='rgba(255,246,228,.5)';c.lineWidth=4;c.beginPath();c.arc(W/2,566,86,0,TAU);c.stroke();
+ c.fillStyle='rgba(255,246,228,.82)';c.beginPath();c.moveTo(W/2-26,524);c.lineTo(W/2+52,566);c.lineTo(W/2-26,608);c.closePath();c.fill();
+ c.fillStyle='rgba(244,243,239,.78)';c.font='500 30px "IBM Plex Sans KR", sans-serif';
+ wrapWords(c,sgWhy||'화면을 누르면 안내 영상이 재생됩니다.',W-120,3).forEach((ln,i)=>c.fillText(ln,W/2,724+i*42));
+ c.fillStyle='rgba(244,243,239,.4)';c.font='400 22px "IBM Plex Mono", monospace';c.fillText('00:16 · '+SG_PLAYS+'회 재생',W/2,884);
+ c.textAlign='left';sgTex.needsUpdate=true}
+function sgRefresh(){drawSignScreen();drawSignBar()}
+function sgShow(t){if(sgScreenMat.map!==t){sgScreenMat.map=t;sgScreenMat.needsUpdate=true}}
+function sgRest(){if(sgVid&&!sgVid.paused)sgVid.pause()}
+function sgWatch(ms){clearTimeout(sgTimer);sgTimer=setTimeout(()=>{if(sgState==='load')
+ sgFail('안내 영상을 불러오지 못했습니다. 네트워크를 확인한 뒤 화면을 눌러 주세요.')},ms||12000)}
+// never throws and never logs: a missing clip just leaves this standby screen up and the gallery keeps running
+function sgFail(why){sgState='fail';sgWhy=why;clearTimeout(sgTimer);sgRest();sgShow(sgTex);sgRefresh()}
+function sgPlay(){if(!sgVid)return;const p=sgVid.play();if(!p||!p.catch)return;
+ p.catch(()=>{if(!sgVid.muted){sgVid.muted=true;sgSound=false;const q=sgVid.play();if(q&&q.catch)q.catch(()=>{sgState='block';sgRefresh()});sgRefresh();return}
+  if(sgState==='load'||sgState==='play'){sgState='block';sgRefresh()}})}
+// three.js only uploads a VideoTexture while it is the bound map, so swapping in the frozen frame together
+// with video.pause() ends the per-frame GPU upload for good once the third play is over
+function sgFreeze(){try{sgLastCv.getContext('2d').drawImage(sgVid,0,0,sgLastCv.width,sgLastCv.height);sgLastTex.needsUpdate=true;sgShow(sgLastTex);return true}catch(e){return false}}
+function sgEnd(){sgPlays++;
+ if(sgPlays<SG_PLAYS){sgRefresh();try{sgVid.currentTime=0}catch(e){}sgPlay();return}
+ sgState='done';sgRest();if(!sgFreeze())sgShow(sgTex);sgRefresh()}
+function sgIdle(dt){if(!sgVid||sgState!=='play')return;
+ if(sgSeen()){sgHide=0;if(sgVid.paused&&!document.hidden)sgPlay()}
+ else if(!sgSound){sgHide+=dt;if(sgHide>1.2)sgRest()}}   // sound on = you may be listening while walking
+function sgTap(){dismissHint();
+ if(sgState==='fail'){if(!sgVid)return;sgState='load';sgWhy='';sgPlays=0;sgHide=0;sgRefresh();sgVid.load();sgWatch();sgPlay();return}
+ if(sgState==='play'&&sgSound){sgSound=false;sgVid.muted=true;sgRefresh();return}  // tap again to mute
+ sgSound=true;sgPlays=0;sgHide=0;
+ if(sgVid){sgVid.muted=false;try{sgVid.currentTime=0}catch(e){}
+  sgState=sgVid.readyState>=2?'play':'load';sgPlay()}   // replaying from 'done' re-enters the play phase
+ sgRefresh()}
+function sgInit(){
+ if(location.protocol==='file:'){sgFail('로컬 파일로 열려 있어 안내 영상을 재생할 수 없습니다. 웹 서버에서 열면 재생됩니다.');return}
+ const v=document.createElement('video');v.className='vhide';
+ v.muted=true;v.defaultMuted=true;v.loop=false;v.autoplay=true;v.playsInline=true;v.preload='metadata';
+ ['muted','playsinline','webkit-playsinline','autoplay'].forEach(k=>v.setAttribute(k,''));v.setAttribute('preload','metadata');
+ v.addEventListener('loadeddata',()=>{if(sgState==='fail')return;clearTimeout(sgTimer);
+  if(!sgVTex){sgVTex=new THREE.VideoTexture(v);sgVTex.generateMipmaps=false}});
+ v.addEventListener('playing',()=>{if(sgState==='fail')return;sgState='play';if(sgVTex)sgShow(sgVTex);sgRefresh()});
+ v.addEventListener('ended',sgEnd);
+ v.addEventListener('error',()=>sgFail('안내 영상을 불러올 수 없습니다. 네트워크를 확인한 뒤 화면을 눌러 주세요.'));
+ v.addEventListener('stalled',()=>{if(sgState==='load')sgWatch(5000)});
+ sgVid=v;v.src=SG_SRC;document.body.appendChild(v);sgWatch();sgPlay()}
+sgRefresh();sgInit();
+
 /* ---------- characters (visitors + me) ---------- */
 function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
 const GEO={},geo=(k,f)=>GEO[k]||(GEO[k]=f()),SPH=(r,w,h)=>geo('s'+r+'_'+(w||20),()=>new THREE.SphereGeometry(r,w||20,h||14));
@@ -576,11 +708,14 @@ function drawTexts(){
  c.fillStyle='#45464d';c.font='500 44px "IBM Plex Sans KR", sans-serif';c.fillText('Portfolio Solo Exhibition',48,362,940);
  c.fillStyle='#55565c';c.font='400 30px "IBM Plex Mono", "IBM Plex Sans KR", monospace';c.fillText('github.com/'+GH_USER+'  ·  공개 저장소 '+N+'점  ·  상시',50,424,940);
  titleTex.needsUpdate=true;
+ sgRefresh();
  avatars.concat(me).forEach(a=>{if(performance.now()>a.sayUntil)drawName(a)});
 }
 drawTexts();
 if(document.fonts&&document.fonts.load){const all=ART.map(a=>a.repo+(a.lang||'')+a.note+a.stack.join('')).join('')+
- '금경희 포트폴리오 개인전 Portfolio Solo Exhibition github.com/'+GH_USER+' 공개 저장소 점 상시 나선 램프관 최근 갱신 언어 정보 없음 설명이 등록되지 않은 저장소입니다 Public 나'+VIS.map(v=>v.name).join('')+POOL.join('');
+ '금경희 포트폴리오 개인전 Portfolio Solo Exhibition github.com/'+GH_USER+' 공개 저장소 점 상시 나선 램프관 최근 갱신 언어 정보 없음 설명이 등록되지 않은 저장소입니다 Public 나'+
+ 'META GALLERY 안내 영상 음소거 소리 켜짐 회 재생 완료 눌러서 다시 보기 불러오는 중 불러오기 실패 재시도 화면을 누르면 재생됩니다 네트워크를 확인한 뒤 주세요 로컬 파일로 열려 있어 없습니다 웹 서버에서 열면 '+
+ VIS.map(v=>v.name).join('')+POOL.join('');
  Promise.all([document.fonts.load('800 40px "Nanum Myeongjo"',all),document.fonts.load('500 40px "IBM Plex Sans KR"',all),document.fonts.load('600 40px "IBM Plex Sans KR"',all),document.fonts.load('400 40px "IBM Plex Sans KR"',all),document.fonts.load('400 30px "IBM Plex Mono"',all+'0123456789.—·'),document.fonts.load('500 30px "IBM Plex Mono"',all+'0123456789.—·')]).then(drawTexts,drawTexts)}
 
 /* ---------- movement: lobby (flat disc) or ramp (phi, r) ---------- */
@@ -593,12 +728,23 @@ const cam={x:0,y:0,z:0,yaw:0,p:0,init:false};
 const inEntry=th=>th>.12&&th<OPEN-.08;
 const norm=a=>((a%TAU)+TAU)%TAU;
 function syncRamp(){const p=polar(player.phi,player.r);player.x=p.x;player.z=p.z;player.y=hA(player.phi)}
+// the signage stands on the lobby floor, so it needs its own collision: read the step in the panel's own frame
+// (u along the panel, v out into the atrium) and slide out of the nearer face. It is clear of the ramp radius,
+// so only the lobby branch of moveBy can touch it, and visitors never leave the ramp.
+function sgClear(x,z){const dx=x-sgC.x,dz=z-sgC.z,u=dx*sgT.x+dz*sgT.z,v=dx*sgN.x+dz*sgN.z;
+ const hu=SG_HW+PR,hv=SG_DEEP+PR;
+ if(Math.abs(u)>=hu||v>=hv||v<=-PR)return null;
+ const pu=hu-Math.abs(u),pv=hv-v,du=pu<pv?(u<0?-pu:pu):0,dv=pu<pv?0:pv;
+ return{x:x+sgT.x*du+sgN.x*dv,z:z+sgT.z*du+sgN.z*dv}}
 function moveBy(dx,dz){
  const nx=player.x+dx,nz=player.z+dz,r=Math.hypot(nx,nz);
  if(player.state==='lobby'){
-  if(r>R_IN0-PR&&!(inEntry(norm(Math.atan2(nz,nx))))){const s=(R_IN0-PR)/r;player.x=nx*s;player.z=nz*s;return}
-  if(r>R_IN0){player.state='ramp';player.phi=norm(Math.atan2(nz,nx));player.r=r;syncRamp();return}
-  player.x=nx;player.z=nz;player.y=0;return}
+  let lx=nx,lz=nz;
+  if(r>R_IN0-PR&&!(inEntry(norm(Math.atan2(nz,nx))))){const s=(R_IN0-PR)/r;lx=nx*s;lz=nz*s}
+  else if(r>R_IN0){player.state='ramp';player.phi=norm(Math.atan2(nz,nx));player.r=r;syncRamp();return}
+  const c=sgClear(lx,lz);
+  if(c){lx=c.x;lz=c.z;const r2=Math.hypot(lx,lz);if(r2>R_IN0-PR){const s=(R_IN0-PR)/r2;lx*=s;lz*=s}} // sliding sideways can bulge outward
+  player.x=lx;player.z=lz;player.y=0;return}
  // on the ramp, split the step into along-the-ramp and across-the-ramp parts so "forward" follows the curve
  const c0=Math.cos(player.phi),s0=Math.sin(player.phi);
  let phi=clamp(player.phi+(dz*c0-dx*s0)/player.r,.12,PHI_MAX-.3);const h=hA(phi);let rr=Math.min(player.r+dx*c0+dz*s0,Rout(h)-PR);
@@ -711,9 +857,12 @@ let poolI=0;
 setTimeout(()=>say(avatars[0],'안녕하세요! 위에서 손 흔들고 있어요'),2500);
 
 /* ---------- input ---------- */
-const ray=new THREE.Raycaster(),ndc=new THREE.Vector2();
+const ray=new THREE.Raycaster(),ndc=new THREE.Vector2(),SG_PICK=-2; // -2: the signage, which is not an artwork
 function pick(e){const r=canvas.getBoundingClientRect();ndc.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(ndc,camera);
- const hit=ray.intersectObjects(clickables.concat(solids),false)[0];return hit&&hit.distance<22&&hit.object.userData.i!=null?hit.object.userData.i:-1}
+ const hit=ray.intersectObjects(clickables.concat(solids,sgHits),false)[0];
+ if(!hit||hit.distance>=22)return -1;
+ if(hit.object.userData.sg)return SG_PICK;
+ return hit.object.userData.i!=null?hit.object.userData.i:-1}
 // mouse: drag to look around, click to open an artwork (unchanged)
 let drag=null;
 function lookBy(dx,dy,k){
@@ -744,7 +893,7 @@ canvas.addEventListener('pointermove',e=>{
  if(e.pointerType==='mouse'){
   if(drag&&e.pointerId===drag.id){const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.x=e.clientX;drag.y=e.clientY;drag.moved+=Math.abs(dx)+Math.abs(dy);
    if(drag.moved>6)lookBy(dx,dy,.003)}
-  else if(!drag)canvas.classList.toggle('hot',pick(e)>=0);
+  else if(!drag)canvas.classList.toggle('hot',pick(e)!==-1);
   return}
  const q=fingers.get(e.pointerId);if(!q)return;
  q.x=e.clientX;q.y=e.clientY;q.maxD=Math.max(q.maxD,Math.hypot(q.x-q.x0,q.y-q.y0));
@@ -758,14 +907,16 @@ canvas.addEventListener('pointermove',e=>{
  const m0=clamp((d-DEAD_PX)/SPAN_PX,0,1),m=JOY_MIN+(1-JOY_MIN)*m0*m0;   // 12px -> slow creep, 112px -> full speed
  joyV.x=d>0?dx/d*m:0;joyV.y=d>0?dy/d*m:0});
 function endDrag(e,click){if(!drag||e.pointerId!==drag.id)return;
- if(click&&drag.moved<=6){const i=pick(e);if(i>=0)focusArt(i);else if(isSmall()||isCoarse()){hideLabel();setChat(false)}}
+ if(click&&drag.moved<=6){const i=pick(e);
+  if(i===SG_PICK)sgTap();else if(i>=0)focusArt(i);else if(isSmall()||isCoarse()){hideLabel();setChat(false)}}
  drag=null;canvas.classList.remove('dragging')}
 function endTouch(e,lift){
  const q=fingers.get(e.pointerId);if(!q)return;
  fingers.delete(e.pointerId);clearWalk();syncTouchMode();
  if(!(lift&&!q.spent&&!q.walk&&fingers.size===0&&q.maxD<=TAP_PX&&performance.now()-q.t0<=TAP_MS))return;
- const i=pick(e);                                        // tap: artwork first, then close an open panel, then jump
- if(i>=0)focusArt(i);
+ const i=pick(e);                       // tap: signage, then artwork, then close an open panel, then jump
+ if(i===SG_PICK)sgTap();
+ else if(i>=0)focusArt(i);
  else if(!label.hidden||chat.classList.contains('open')){hideLabel();setChat(false)}
  else jump()}
 canvas.addEventListener('pointerup',e=>{e.pointerType==='mouse'?endDrag(e,true):endTouch(e,true)});
@@ -782,7 +933,7 @@ addEventListener('keydown',e=>{if(e.target.closest&&e.target.closest('input,text
  if(MOVE_KEYS.includes(e.code)){keys[e.code]=true;if(e.code.startsWith('Arrow'))e.preventDefault()}});
 addEventListener('keyup',e=>{keys[e.code]=false});
 addEventListener('blur',()=>{for(const k in keys)keys[k]=false;resetTouch()});
-document.addEventListener('visibilitychange',()=>{if(document.hidden){for(const k in keys)keys[k]=false;resetTouch()}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){for(const k in keys)keys[k]=false;resetTouch();sgRest()}else sgIdle(0)});
 
 /* ---------- floor plan (top view of the drum) ---------- */
 const mapC=$('map'),mctx=mapC.getContext('2d');let mapW=0,mapH=0;const cols={};
@@ -871,6 +1022,7 @@ function tick(now){const dt=Math.min(.05,(now-last)/1000);last=now;frame++;
  if(!firstPerson)me.g.visible=Math.hypot(camera.position.x-player.x,camera.position.z-player.z)>.5;
  updateAvatars(dt,now);
  if(frame%2===0)drawMap();
+ if(frame%6===0)sgIdle(dt*6);
  if(frame%10===0)updateLevel();
  if(frame%60===0)readCols();
  renderer.render(scene,camera);requestAnimationFrame(tick)}

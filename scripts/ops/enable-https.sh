@@ -125,7 +125,10 @@ for env_name in "${envs[@]}"; do
     cert="/etc/letsencrypt/live/$(cert_name_for "${env_name}")/fullchain.pem"
     [[ -f "${cert}" ]] || die "인증서가 없다: ${cert} (issue-certificates.sh ${env_name} --confirm 먼저)"
 
-    if grep -qE '^\s*listen 443 ssl;' "${conf}"; then
+    # 주의: 세미콜론을 넣으면 안 된다. 실제 설정은 nginx 1.24 문법인
+    # `listen 443 ssl http2;` 라서 `ssl;` 로 찾으면 영영 매치되지 않고,
+    # 이미 STAGE 2 인 서버에 다시 돌렸을 때 치환기로 들어가 die 한다.
+    if grep -qE '^[[:space:]]*listen 443 ssl' "${conf}"; then
         log "${env_name}: 이미 STAGE 2 (443 활성). 건너뛴다"
         continue
     fi
